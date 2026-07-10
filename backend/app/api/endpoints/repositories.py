@@ -6,7 +6,8 @@ from app.api.deps import get_db
 from app.schemas.repository import ImportRepositoryRequest, RepositoryResponse, RepositoryStatusResponse
 from app.services.repository_service import RepositoryService
 from app.core.executor import LocalBackgroundExecutor
-from app.models import Repository, RepositoryVersion, Job
+from app.models import Repository, RepositoryVersion, Job, ParsingReport
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -20,8 +21,8 @@ async def import_repository(
     service: RepositoryService = Depends(get_repository_service)
 ):
     try:
-        job_id = await service.queue_import(str(request.url))
-        return {"job_id": job_id, "message": "Import job queued"}
+        job_id, repo_id = await service.queue_import(str(request.url))
+        return {"job_id": job_id, "repository_id": repo_id, "message": "Import job queued"}
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -60,6 +61,59 @@ async def get_repository_status(id: uuid.UUID, db: AsyncSession = Depends(get_db
         job_id=job.id,
         job_status=job.status
     )
+
+@router.get("/{id}/stats")
+async def get_repository_stats(id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+    # Simple real stats based on the parsed version
+    result = await db.execute(
+        select(RepositoryVersion)
+        .filter(RepositoryVersion.repository_id == id)
+        .order_by(RepositoryVersion.created_at.desc())
+        .limit(1)
+    )
+    version = result.scalars().first()
+    if not version:
+        raise HTTPException(status_code=404, detail="No versions found")
+    report_res = await db.execute(
+        select(ParsingReport)
+        .filter(ParsingReport.repository_version_id == version.id)
+        .order_by(ParsingReport.created_at.desc())
+        .limit(1)
+    )
+    report = report_res.scalars().first()
+    
+    score = "A+"
+    tech_debt = "Low"
+    knowledge_coverage = "0%"
+    graph_density = "Low"
+    
+    if report:
+        if report.errors_count == 0:
+            score = "A+"
+            tech_debt = "Low"
+        elif report.errors_count < 10:
+            score = "A"
+            tech_debt = "Medium"
+        else:
+            score = "C"
+            tech_debt = "High"
+            
+        total_files = report.parsed_files + report.skipped_files + report.unsupported_files + report.failed_files
+        if total_files > 0:
+            coverage = int((report.parsed_files / total_files) * 100)
+            knowledge_coverage = f"{coverage}%"
+            
+        if report.parsed_files > 50:
+            graph_density = "High"
+        elif report.parsed_files > 10:
+            graph_density = "Medium"
+
+    return {
+        "score": score,
+        "technicalDebt": tech_debt, 
+        "knowledgeCoverage": knowledge_coverage,
+        "graphDensity": graph_density
+    }
 
 @router.post("/{id}/refresh", status_code=202)
 async def refresh_repository(

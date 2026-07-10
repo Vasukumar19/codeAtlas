@@ -4,10 +4,12 @@ from app.retrieval.domain.schemas import ContextPackage, RetrievalIntent, Retrie
 from app.intelligence.gateway import AIGateway
 from app.intelligence.models.registry import ModelRegistry
 from app.intelligence.models.gemini import GeminiProvider
+from app.intelligence.models.openai import OpenAIProvider
 
 @pytest.fixture(autouse=True)
 def setup_registry():
     ModelRegistry.register("Gemini", GeminiProvider())
+    ModelRegistry.register("OpenAI", OpenAIProvider())
 
 @pytest.mark.asyncio
 async def test_ai_gateway():
@@ -31,6 +33,13 @@ async def test_ai_gateway():
     # Our mock injects citations if it sees a UUID in the prompt
     assert len(response.citations) > 0
     assert str(response.citations[0].node_id) == str(node_id)
+    
+    # 2.5 Test OpenAI Strategy
+    response_openai = await gateway.process("Explain architecture", context, RetrievalIntent.ARCHITECTURE, model_name="OpenAI")
+    assert response_openai.title == "Architecture Overview (OpenAI)"
+    assert len(response_openai.sections) > 0
+    assert len(response_openai.citations) > 0
+    assert str(response_openai.citations[0].node_id) == str(node_id)
     
     # 3. Test Hallucination Rejection
     # We will pass an empty context. The LLM will still try to cite the node_id (if we force it),

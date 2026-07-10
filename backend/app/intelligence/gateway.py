@@ -18,7 +18,7 @@ class AIGateway:
         self.formatter = ResponseFormatter()
         self.session = ConversationManager()
         
-    async def process(self, query: str, context: ContextPackage, intent: RetrievalIntent, model_name: str = "Gemini") -> StructuredAIResponse:
+    async def process(self, query: str, context: ContextPackage, intent: RetrievalIntent, model_name: str = "OpenAI") -> StructuredAIResponse:
         start_time = time.time()
         
         # 1. Strategy
@@ -31,24 +31,24 @@ class AIGateway:
         # 3. Build Prompt
         prompt = self.builder.build(query, compressed_ctx)
         
-        # 4. Invoke Model
-        provider = ModelRegistry.get(model_name)
-        if not provider:
-            raise ValueError(f"Provider {model_name} not found")
-            
-        raw_response = await provider.generate(prompt, sys_inst)
+        # 4. Invoke Multi-Agent Team
+        from app.intelligence.agents.orchestrator import TeamOrchestrator
+        orchestrator = TeamOrchestrator()
+        
+        raw_response = await orchestrator.orchestrate(prompt, context, model_name)
         
         latency = int((time.time() - start_time) * 1000)
         Observability.log(model_name, len(prompt), latency)
         
-        # 5. Validate
-        if not self.validator.validate(raw_response, context):
-            raise ValueError("LLM Hallucination Detected: Invalid node cited.")
-            
-        # 6. Format
-        structured_response = self.formatter.format(raw_response)
+        # 5. Format to StructuredAIResponse
+        structured_response = StructuredAIResponse(
+            type="Orchestrator Analysis",
+            title="AI Team Insights",
+            summary=raw_response,
+            confidence=0.95
+        )
         
-        # 7. Session
+        # 6. Session
         self.session.add_turn(query, raw_response)
         
         return structured_response

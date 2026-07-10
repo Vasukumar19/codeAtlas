@@ -27,7 +27,7 @@ class HybridRetrievalEngine:
         start_time = time.time()
         
         # 1. Detect Intent
-        intent = self.detector.detect(query)
+        intent = await self.detector.detect(query)
         
         # 2. Plan Query
         plan = self.planner.plan(intent)
@@ -37,7 +37,7 @@ class HybridRetrievalEngine:
         for retriever_name in plan.retrievers:
             retriever = RetrievalRegistry.get(retriever_name)
             if retriever:
-                tasks.append(retriever.retrieve(query))
+                tasks.append(retriever.retrieve(query, self.db))
                 
         results_lists = await asyncio.gather(*tasks) if tasks else []
         

@@ -16,14 +16,41 @@ class MockAsyncSession:
         self.added.append(obj)
     async def commit(self):
         pass
+    async def execute(self, stmt):
+        class MockResult:
+            def scalars(self):
+                class MockScalars:
+                    def all(self):
+                        return []
+                return MockScalars()
+        return MockResult()
 
 @pytest.fixture(autouse=True)
 def setup_registry():
-    RetrievalRegistry.register("GraphRetriever", GraphRetriever())
-    RetrievalRegistry.register("RouteRetriever", RouteRetriever())
-    RetrievalRegistry.register("VectorRetriever", VectorRetriever())
-    RetrievalRegistry.register("MetadataRetriever", MetadataRetriever())
-    RetrievalRegistry.register("FunctionRetriever", FunctionRetriever())
+    # Use mock retrievers for engine test since real ones need DB setup
+    class MockGraphRetriever(GraphRetriever):
+        async def retrieve(self, q, db):
+            from app.retrieval.domain.schemas import RetrievalResult
+            return [RetrievalResult(node_id=uuid.uuid4(), entity_type="GraphPath", relevance_score=0.9, evidence=[])]
+    class MockRouteRetriever(RouteRetriever):
+        async def retrieve(self, q, db):
+            from app.retrieval.domain.schemas import RetrievalResult
+            return [RetrievalResult(node_id=uuid.uuid4(), entity_type="Route", relevance_score=0.95, evidence=[])]
+    class MockVectorRetriever(VectorRetriever):
+        async def retrieve(self, q, db):
+            return []
+    class MockMetadataRetriever(MetadataRetriever):
+        async def retrieve(self, q, db):
+            return []
+    class MockFunctionRetriever(FunctionRetriever):
+        async def retrieve(self, q, db):
+            return []
+
+    RetrievalRegistry.register("GraphRetriever", MockGraphRetriever())
+    RetrievalRegistry.register("RouteRetriever", MockRouteRetriever())
+    RetrievalRegistry.register("VectorRetriever", MockVectorRetriever())
+    RetrievalRegistry.register("MetadataRetriever", MockMetadataRetriever())
+    RetrievalRegistry.register("FunctionRetriever", MockFunctionRetriever())
 
 @pytest.mark.asyncio
 async def test_hybrid_retrieval_engine():
@@ -59,7 +86,7 @@ async def test_hybrid_retrieval_engine():
     # Test Validation Failure (Empty results mock)
     # If a query returns no results, the validator should reject it.
     class EmptyRetriever(VectorRetriever):
-        async def retrieve(self, q): return []
+        async def retrieve(self, q, db): return []
         
     RetrievalRegistry.register("VectorRetriever", EmptyRetriever())
     RetrievalRegistry.register("DocumentationRetriever", EmptyRetriever())

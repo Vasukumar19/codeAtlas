@@ -20,3 +20,17 @@ class GitPythonProvider(GitProvider):
         commit_hash = await loop.run_in_executor(None, _clone)
         logger.info("Clone complete", commit_hash=commit_hash)
         return commit_hash
+
+    async def get_remote_hash(self, remote_url: str, branch: Optional[str] = None) -> str:
+        logger.info("Fetching remote hash", remote_url=remote_url, branch=branch)
+        def _get_hash():
+            import git
+            g = git.cmd.Git()
+            # ls-remote returns "<hash>\t<ref>"
+            refs = g.ls_remote(remote_url, branch if branch else "HEAD").split('\n')
+            if not refs or not refs[0]:
+                raise ValueError(f"Could not fetch remote hash for {remote_url}")
+            return refs[0].split('\t')[0]
+        
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, _get_hash)

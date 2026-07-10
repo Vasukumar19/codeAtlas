@@ -1,15 +1,52 @@
+import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Loader2, Database, BrainCircuit, Network, CheckCircle2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { api } from '../services/api'
 
 export function ImportPipeline() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const searchParams = new URLSearchParams(location.search)
+  const repoId = searchParams.get('repoId')
   
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+
+  useEffect(() => {
+    if (!repoId) return;
+
+    const poll = async () => {
+      try {
+        const res = await api.getRepositoryStatus(repoId);
+        const status = res.status;
+        
+        if (status === 'NEW' || status === 'CLONING') {
+          setCurrentStepIndex(0);
+        } else if (status === 'READY_TO_PARSE') {
+          setCurrentStepIndex(1);
+        } else if (status === 'PARSING') {
+          setCurrentStepIndex(2);
+        } else if (status === 'PARSED') {
+          setCurrentStepIndex(4); // All done
+          setTimeout(() => {
+            navigate(`/repo/${repoId}`);
+          }, 1000);
+          return; // Stop polling
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      setTimeout(poll, 2000);
+    };
+    
+    poll();
+  }, [repoId, navigate]);
+
   const steps = [
-    { name: 'Cloning Repository', status: 'done', icon: Database },
-    { name: 'Parsing AST', status: 'done', icon: Network },
-    { name: 'Building Knowledge Graph', status: 'active', icon: BrainCircuit },
-    { name: 'Generating Embeddings', status: 'pending', icon: Database },
+    { name: 'Cloning Repository', status: currentStepIndex > 0 ? 'done' : (currentStepIndex === 0 ? 'active' : 'pending'), icon: Database },
+    { name: 'Parsing AST', status: currentStepIndex > 1 ? 'done' : (currentStepIndex === 1 ? 'active' : 'pending'), icon: Network },
+    { name: 'Building Knowledge Graph', status: currentStepIndex > 2 ? 'done' : (currentStepIndex === 2 ? 'active' : 'pending'), icon: BrainCircuit },
+    { name: 'Generating Embeddings', status: currentStepIndex > 3 ? 'done' : (currentStepIndex === 3 ? 'active' : 'pending'), icon: Database },
   ]
   
   return (
@@ -51,10 +88,10 @@ export function ImportPipeline() {
         
         <div className="mt-12 flex justify-end">
           <button 
-            onClick={() => navigate('/repo/demo')}
+            onClick={() => navigate(repoId ? `/repo/${repoId}` : '/')}
             className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors"
           >
-            Skip to Dashboard (Demo)
+            Skip to Dashboard
           </button>
         </div>
       </div>

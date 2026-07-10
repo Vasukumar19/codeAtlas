@@ -12,10 +12,9 @@ from app.models.embeddings.metadata import EmbeddingMetadataModel
 from app.models.embeddings.collection import EmbeddingCollectionModel
 
 class EmbeddingOrchestrator:
-    def __init__(self, db: AsyncSession, provider: EmbeddingProvider, store: VectorStore, collection_id: uuid.UUID):
+    def __init__(self, db: AsyncSession, provider: EmbeddingProvider, collection_id: uuid.UUID):
         self.db = db
         self.provider = provider
-        self.store = store
         self.collection_id = collection_id
         self.cache = EmbeddingCache(db)
         self.engine_version = "v1.0"
@@ -53,13 +52,9 @@ class EmbeddingOrchestrator:
             
             # Embed
             vectors = await self.provider.embed_batch(texts)
-            ids = [c.id for c in batch]
             
-            # Store in FAISS
-            self.store.add(vectors, ids)
-            
-            # Persist Metadata
-            for chunk, vector_id in zip(batch, ids):
+            # Persist Metadata and Vector in PostgreSQL
+            for chunk, vector in zip(batch, vectors):
                 meta = EmbeddingMetadataModel(
                     id=uuid.uuid4(),
                     collection_id=self.collection_id,
@@ -68,7 +63,7 @@ class EmbeddingOrchestrator:
                     repository_version_id=chunk.repository_version_id,
                     knowledge_version_id=chunk.knowledge_version_id,
                     chunk_hash=ChunkBuilder.compute_hash(chunk),
-                    vector_id=vector_id,
+                    vector=vector,
                     structured_metadata={
                         "entity_type": chunk.entity_type,
                         "layer": chunk.layer,
@@ -85,6 +80,5 @@ class EmbeddingOrchestrator:
                 self.db.add(meta)
                 embedded_count += 1
                 
-        self.store.save()
         await self.db.commit()
         return embedded_count

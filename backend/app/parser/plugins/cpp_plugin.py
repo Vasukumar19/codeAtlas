@@ -1,13 +1,13 @@
 import time
-import tree_sitter_c_sharp as ts_c_sharp
+import tree_sitter_cpp as ts_cpp
 from tree_sitter import Language, Parser
 from typing import List
 from app.parser.plugins.base import ParserPlugin
 from app.parser.models import ParseResult
 from app.parser.analyzers.metadata.extractor import MetadataExtractor
 
-class CSharpPlugin(ParserPlugin):
-    LANGUAGE = Language(ts_c_sharp.language())
+class CppPlugin(ParserPlugin):
+    LANGUAGE = Language(ts_cpp.language())
 
     @classmethod
     def parse_files(cls, filepaths: List[str]) -> ParseResult:
@@ -29,7 +29,7 @@ class CSharpPlugin(ParserPlugin):
                 tree = parser.parse(content_bytes)
                 ast_nodes[filepath] = tree
                 
-                features = cls.extract_features(tree, content_bytes, filepath, "c-sharp")
+                features = cls.extract_features(tree, content_bytes, filepath, "cpp")
                 symbols_extracted.extend(features["symbols"])
                 imports_extracted.extend(features["imports"])
                 routes_extracted.extend(features["routes"])
@@ -47,8 +47,8 @@ class CSharpPlugin(ParserPlugin):
             symbols=symbols_extracted,
             imports=imports_extracted,
             routes=routes_extracted,
-            language="c-sharp",
-            parser_version="tree-sitter-c-sharp",
+            language="cpp",
+            parser_version="tree-sitter-cpp",
             parse_duration=time.time() - start_time,
             metadata=metadata
         )

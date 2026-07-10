@@ -51,7 +51,7 @@ class RepositoryService:
         await self.db.refresh(repo)
         return repo, True
 
-    async def queue_import(self, url: str) -> str:
+    async def queue_import(self, url: str) -> tuple[str, str]:
         identity = await self.github.normalize_identity(url)
         remote_url = identity["remote_url"]
         
@@ -83,7 +83,7 @@ class RepositoryService:
             await event_bus.publish("RepositoryQueued", repository_id=str(repo.id))
             
             self.executor.submit(execute_import_job, job.id, repo.remote_url)
-            return str(job.id)
+            return str(job.id), str(repo.id)
         except Exception as e:
             async with _lock:
                 _import_locks.discard(remote_url)

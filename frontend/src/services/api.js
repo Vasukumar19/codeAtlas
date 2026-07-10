@@ -1,33 +1,77 @@
-// Mock API Client to connect to the backend gateways
+const BASE_URL = 'http://127.0.0.1:8000/api/v1';
+
 export const api = {
+  importRepository: async (url) => {
+    const res = await fetch(`${BASE_URL}/repositories/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    });
+    if (!res.ok) throw new Error('Import failed');
+    return res.json(); // returns { job_id, message }
+  },
+  
+  getRepositories: async () => {
+    const res = await fetch(`${BASE_URL}/repositories/`);
+    if (!res.ok) throw new Error('Failed to fetch repositories');
+    return res.json();
+  },
+
+  getRepository: async (id) => {
+    const res = await fetch(`${BASE_URL}/repositories/${id}`);
+    if (!res.ok) throw new Error('Failed to fetch repository');
+    return res.json();
+  },
+
+  getRepositoryStatus: async (id) => {
+    const res = await fetch(`${BASE_URL}/repositories/${id}/status`);
+    if (!res.ok) throw new Error('Failed to fetch status');
+    return res.json();
+  },
+
   fetchRepositoryStats: async (repoId) => {
-    return {
-      score: "A+",
-      technicalDebt: "Low",
-      knowledgeCoverage: "94%",
-      graphDensity: "High"
-    };
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/stats`);
+    if (!res.ok) throw new Error('Failed to fetch stats');
+    return res.json();
   },
   
   askAI: async (query, repoId) => {
-    // Mock the backend HybridRetrieval -> Intelligence Pipeline
-    return {
-      type: "Execution Flow",
-      title: "Authentication Flow",
-      summary: "Authentication starts from POST /login and cascades down.",
-      sections: [
-        { title: "Entry Point", content: "POST /login in auth/routes.py" },
-        { title: "Service Layer", content: "AuthService.login" }
-      ],
-      steps: [
-        "/login", "AuthController", "AuthService", "UserRepository", "PostgreSQL"
-      ],
-      citations: [
-        { file_path: "auth/routes.py", confidence: 0.98 },
-        { file_path: "auth/service.py", confidence: 0.95 },
-        { file_path: "auth/repository.py", confidence: 0.92 }
-      ],
-      confidence: 0.97
-    };
+    const res = await fetch(`${BASE_URL}/intelligence/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: query, repository_id: repoId })
+    });
+    if (!res.ok) throw new Error('Failed to fetch AI response');
+    return res.json();
+  },
+
+  getGraph: async (repoId) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/graph`);
+    if (!res.ok) throw new Error('Failed to fetch graph');
+    return res.json();
+  },
+
+  getEntityDetails: async (repoId, entityId) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/entities/${entityId}`);
+    if (!res.ok) throw new Error('Failed to fetch entity details');
+    return res.json();
+  },
+
+  getFileContent: async (repoId, fileId) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/files/${fileId}/content`);
+    if (!res.ok) throw new Error('Failed to fetch file content');
+    return res.json();
+  },
+
+  searchRepository: async (repoId, query) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/search?q=${encodeURIComponent(query)}`);
+    if (!res.ok) throw new Error('Failed to search');
+    return res.json();
+  },
+
+  getHotFiles: async (repoId) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/hot-files`);
+    if (!res.ok) throw new Error('Failed to fetch hot files');
+    return res.json();
   }
-}
+};

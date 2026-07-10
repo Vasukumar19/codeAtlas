@@ -1,5 +1,5 @@
 from app.intelligence.strategies.base import ReasoningStrategy
 
 class ExecutionFlowStrategy(ReasoningStrategy):
-    def build_system_instruction(self) -> str:
-        return "Trace the execution flow step-by-step from entry point to exit point."
+    def get_specific_instructions(self) -> str:
+        return "Trace the execution path of the request. Outline the steps clearly in the 'steps' JSON array. Set type to 'Execution Flow'."

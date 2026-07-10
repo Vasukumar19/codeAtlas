@@ -1,7 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Landing from './pages/Landing';
-import Dashboard from './pages/Dashboard';
+import { Dashboard } from './pages/Dashboard';
 import Repository from './pages/Repository';
 import GraphExplorer from './pages/GraphExplorer';
 import Analysis from './pages/Analysis';
@@ -15,7 +15,7 @@ function App() {
       <Route element={<Layout />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/repository/:id" element={<Repository />} />
-        <Route path="/graph" element={<GraphExplorer />} />
+        <Route path="/repo/:id/flow" element={<GraphExplorer />} />
         <Route path="/analysis" element={<Analysis />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

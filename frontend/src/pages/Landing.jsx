@@ -1,10 +1,25 @@
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { ArrowRight, Github } from 'lucide-react'
+import { ArrowRight, Github, Loader2 } from 'lucide-react'
+import { api } from '../services/api'
 
 export function Landing() {
   const navigate = useNavigate()
-  
+  const [url, setUrl] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  const handleImport = async () => {
+    if (!url) return;
+    setLoading(true);
+    try {
+      const res = await api.importRepository(url);
+      navigate(`/import?repoId=${res.repository_id}`);
+    } catch (e) {
+      alert("Failed to queue import: " + e.message);
+      setLoading(false);
+    }
+  }
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Dynamic Background Elements */}
@@ -49,16 +64,18 @@ export function Landing() {
             <Github className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
             <input 
               type="text" 
-              placeholder="https://github.com/fastapi/fastapi" 
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://github.com/Vasukumar19/codeAtlas" 
               className="w-full bg-surface border border-white/10 rounded-xl pl-12 pr-4 py-4 text-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary text-white shadow-2xl"
             />
           </div>
           <button 
-            onClick={() => navigate('/import')}
-            className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]"
+            onClick={handleImport}
+            disabled={loading || !url}
+            className="w-full sm:w-auto px-8 py-4 bg-primary hover:bg-blue-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)] disabled:opacity-50"
           >
-            Import
-            <ArrowRight className="w-5 h-5" />
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Import <ArrowRight className="w-5 h-5" /></>}
           </button>
         </motion.div>
       </div>

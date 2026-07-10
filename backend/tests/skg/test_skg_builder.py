@@ -38,3 +38,25 @@ async def test_skg_builder_edges():
     assert any(e.source_id == f1.id and e.target_id == s1.id and e.edge_type == SKGEdgeType.CONTAINS.value for e in edges)
     # Check Route ROUTES_TO Symbol
     assert any(e.source_id == r1.id and e.target_id == s1.id and e.edge_type == SKGEdgeType.ROUTES_TO.value for e in edges)
+
+@pytest.mark.asyncio
+async def test_skg_builder_imports():
+    db = MockAsyncSession()
+    version_id = uuid.uuid4()
+    builder = SKGBuilder(db, version_id)
+    
+    f1 = DomainFile(id=uuid.uuid4(), repository_id=uuid.uuid4(), repository_version_id=version_id, path="app/main.py", directory_id=uuid.uuid4(), language="python")
+    f2 = DomainFile(id=uuid.uuid4(), repository_id=uuid.uuid4(), repository_version_id=version_id, path="app/core/config.py", directory_id=uuid.uuid4(), language="python")
+    
+    i1 = DomainImport(id=uuid.uuid4(), repository_id=uuid.uuid4(), repository_version_id=version_id, file_id=f1.id, raw_statement="from app.core.config import settings")
+    
+    builder.build_import_edges([i1], [f1, f2])
+    
+    await builder.commit_to_database()
+    edges = builder.edges
+    
+    assert len(edges) == 2
+    # Check CONTAINS edge
+    assert any(e.source_id == f1.id and e.target_id == i1.id and e.edge_type == SKGEdgeType.CONTAINS.value for e in edges)
+    # Check IMPORTS edge
+    assert any(e.source_id == f1.id and e.target_id == f2.id and e.edge_type == SKGEdgeType.IMPORTS.value for e in edges)

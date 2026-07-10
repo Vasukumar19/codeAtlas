@@ -1,5 +1,5 @@
 from app.intelligence.strategies.base import ReasoningStrategy
 
 class ImpactAnalysisStrategy(ReasoningStrategy):
-    def build_system_instruction(self) -> str:
-        return "You are a senior engineer. Explain the blast radius and impact of modifying the components listed in the context."
+    def get_specific_instructions(self) -> str:
+        return "Focus on identifying downstream dependencies. List services and files affected by changes. Set type to 'Impact Analysis'."

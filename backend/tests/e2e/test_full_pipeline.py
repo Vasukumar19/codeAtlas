@@ -55,7 +55,7 @@ async def test_full_e2e_pipeline():
     skg_builder = SKGBuilder(db, version_id)
     skg_builder.build_structural_edges(list(rim_builder.directories.values()), rim_builder.files, rim_builder.symbols)
     skg_builder.build_route_edges(rim_builder.routes, rim_builder.symbols)
-    skg_builder.build_import_edges(rim_builder.imports)
+    skg_builder.build_import_edges(rim_builder.imports, rim_builder.files)
     
     assert len(skg_builder.edges) > 0
     
