@@ -1,0 +1,13 @@
+"""Reusable FastAPI dependencies."""
+
+from collections.abc import AsyncIterator
+
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.db.session import get_session
+
+
+async def get_db() -> AsyncIterator[AsyncSession]:
+    """Expose the database session with the conventional dependency name."""
+    async for session in get_session():
+        yield session
