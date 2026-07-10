@@ -1,5 +1,6 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 
+
 class SummaryEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:
         # Simple deterministic summary based on purposes and layer

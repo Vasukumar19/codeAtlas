@@ -1,7 +1,8 @@
-import uuid
+from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class EmbeddingCollectionModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "embedding_collections"

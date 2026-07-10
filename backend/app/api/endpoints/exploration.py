@@ -1,11 +1,16 @@
-import uuid
 import os
+import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, or_
+
 from app.api.deps import get_db
 from app.models import RepositoryVersion
-from app.models.rim.models import RIMFileModel, RIMSymbolModel, RIMRouteModel, RIMDirectoryModel
+from app.models.rim.models import (
+    RIMFileModel,
+    RIMSymbolModel,
+)
 from app.models.skg.edge import SKGEdgeModel
 
 router = APIRouter()
@@ -103,7 +108,7 @@ async def get_file_content(id: uuid.UUID, file_id: uuid.UUID, db: AsyncSession =
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File content not found on disk")
         
-    with open(full_path, "r", encoding="utf-8", errors="ignore") as f:
+    with open(full_path, encoding="utf-8", errors="ignore") as f:
         content = f.read()
         
     return {"content": content, "path": file.path, "language": file.language}

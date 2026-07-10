@@ -1,13 +1,14 @@
-import asyncio
 from datetime import datetime
-from app.db.session import SessionLocal
+
 from sqlalchemy import select
+
+from app.core.events import event_bus
+from app.core.logger import get_logger
+from app.db.session import SessionLocal
 from app.models import Job, RepositoryVersion
 from app.models.enums import JobStatus, RepositoryStatus
 from app.providers.git_provider import GitPythonProvider
 from app.providers.storage_provider import LocalFileSystemStorageProvider
-from app.core.logger import get_logger
-from app.core.events import event_bus
 from app.services.parsing_orchestrator import ParsingOrchestrator
 
 logger = get_logger(__name__)

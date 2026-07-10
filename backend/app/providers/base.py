@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Any
+
 
 class RepositoryProvider(ABC):
     @abstractmethod
@@ -7,16 +8,16 @@ class RepositoryProvider(ABC):
         pass
     
     @abstractmethod
-    async def normalize_identity(self, url: str) -> Dict[str, str]:
+    async def normalize_identity(self, url: str) -> dict[str, str]:
         pass
     
     @abstractmethod
-    async def get_metadata(self, owner: str, name: str) -> Dict[str, Any]:
+    async def get_metadata(self, owner: str, name: str) -> dict[str, Any]:
         pass
 
 class GitProvider(ABC):
     @abstractmethod
-    async def clone(self, remote_url: str, clone_path: str, branch: Optional[str] = None) -> str:
+    async def clone(self, remote_url: str, clone_path: str, branch: str | None = None) -> str:
         pass
 
 class StorageProvider(ABC):

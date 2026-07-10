@@ -1,7 +1,10 @@
 import uuid
+
+from sqlalchemy import JSON, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, Integer, JSON
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class RetrievalTraceModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "retrieval_traces"

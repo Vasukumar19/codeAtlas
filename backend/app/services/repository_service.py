@@ -1,15 +1,15 @@
 import asyncio
-import uuid
-from typing import Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+
 from fastapi import HTTPException
-from app.models import Repository, RepositoryVersion, Job
-from app.models.enums import JobType, JobStatus, RepositoryStatus
-from app.providers.github_provider import GitHubProvider
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.events import event_bus
 from app.core.executor import LocalBackgroundExecutor
 from app.core.logger import get_logger
-from app.core.events import event_bus
+from app.models import Job, Repository, RepositoryVersion
+from app.models.enums import JobStatus, JobType, RepositoryStatus
+from app.providers.github_provider import GitHubProvider
 from app.services.import_service import execute_import_job
 
 logger = get_logger(__name__)

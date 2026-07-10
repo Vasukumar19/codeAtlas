@@ -1,5 +1,5 @@
-from typing import List
 from app.retrieval.domain.schemas import ContextPackage
+
 
 class RetrievalValidator:
     def validate(self, package: ContextPackage) -> bool:

@@ -1,6 +1,6 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
-from app.models.skg.edge import SKGEdgeModel
 from app.models.enums import SKGEdgeType
+
 
 class DependencyEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:

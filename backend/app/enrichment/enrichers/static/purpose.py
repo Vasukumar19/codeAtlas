@@ -1,6 +1,7 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 from app.rim.domain.models import DomainRoute, DomainSymbol
 
+
 class PurposeEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:
         ent = context.rim_entity

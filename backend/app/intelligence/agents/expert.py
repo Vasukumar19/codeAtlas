@@ -1,6 +1,6 @@
-from typing import Optional
 from app.intelligence.models.registry import ModelRegistry
 from app.retrieval.domain.schemas import ContextPackage
+
 
 class ExpertAgent:
     def __init__(self, role_name: str, expertise: str):
@@ -19,10 +19,10 @@ If the context is irrelevant to your expertise, state that clearly."""
 
         # Format context loosely for the expert
         context_str = f"Query: {query}\n\n"
-        if context.primary_nodes:
+        if context.relevant_entities:
             context_str += "Relevant Code Files & Symbols:\n"
-            for node in context.primary_nodes:
-                context_str += f"- {node.path} ({node.type}):\n{node.content}\n\n"
+            for node in context.relevant_entities:
+                context_str += f"- Node {node.node_id} ({node.entity_type}):\n"
         
         response = await provider.generate(context_str, system_instruction)
         return response

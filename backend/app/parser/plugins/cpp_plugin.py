@@ -1,16 +1,18 @@
 import time
+
 import tree_sitter_cpp as ts_cpp
 from tree_sitter import Language, Parser
-from typing import List
-from app.parser.plugins.base import ParserPlugin
-from app.parser.models import ParseResult
+
 from app.parser.analyzers.metadata.extractor import MetadataExtractor
+from app.parser.models import ParseResult
+from app.parser.plugins.base import ParserPlugin
+
 
 class CppPlugin(ParserPlugin):
     LANGUAGE = Language(ts_cpp.language())
 
     @classmethod
-    def parse_files(cls, filepaths: List[str]) -> ParseResult:
+    def parse_files(cls, filepaths: list[str]) -> ParseResult:
         start_time = time.time()
         parser = Parser(cls.LANGUAGE)
         
@@ -23,7 +25,7 @@ class CppPlugin(ParserPlugin):
         
         for filepath in filepaths:
             try:
-                with open(filepath, "r", encoding="utf-8") as f:
+                with open(filepath, encoding="utf-8") as f:
                     content = f.read()
                 content_bytes = bytes(content, "utf8")
                 tree = parser.parse(content_bytes)

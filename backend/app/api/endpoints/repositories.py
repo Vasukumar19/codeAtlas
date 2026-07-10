@@ -1,13 +1,18 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
-from sqlalchemy.ext.asyncio import AsyncSession
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.deps import get_db
-from app.schemas.repository import ImportRepositoryRequest, RepositoryResponse, RepositoryStatusResponse
-from app.services.repository_service import RepositoryService
 from app.core.executor import LocalBackgroundExecutor
-from app.models import Repository, RepositoryVersion, Job, ParsingReport
-from sqlalchemy import func
+from app.models import Job, ParsingReport, Repository, RepositoryVersion
+from app.schemas.repository import (
+    ImportRepositoryRequest,
+    RepositoryResponse,
+    RepositoryStatusResponse,
+)
+from app.services.repository_service import RepositoryService
 
 router = APIRouter()
 

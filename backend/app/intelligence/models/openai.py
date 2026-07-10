@@ -1,12 +1,19 @@
-import json
 import os
+
 import httpx
+
 from app.intelligence.models.base import AIModelProvider
+
 
 class OpenAIProvider(AIModelProvider):
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.environ.get("OPENAI_API_KEY")
         self.model = "gpt-4o"
+        self.embedding_model = "text-embedding-3-small"
+        
+    @property
+    def model_name(self) -> str:
+        return self.embedding_model
         
     async def generate(self, prompt: str, system_instruction: str) -> str:
         if not self.api_key:

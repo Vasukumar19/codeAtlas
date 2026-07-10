@@ -1,15 +1,16 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional
 from pathlib import Path
-from tree_sitter import Query, QueryCursor, Node, Tree
-from app.parser.models import ParseResult
+
+from tree_sitter import Query, QueryCursor, Tree
+
 from app.core.logger import get_logger
+from app.parser.models import ParseResult
 
 logger = get_logger(__name__)
 
 class ParserPlugin(ABC):
     @classmethod
-    def load_query(cls, language_name: str, query_name: str) -> Optional[Query]:
+    def load_query(cls, language_name: str, query_name: str) -> Query | None:
         # Fallback typescript to javascript queries
         if language_name == "typescript":
             language_name = "javascript"
@@ -20,12 +21,13 @@ class ParserPlugin(ABC):
         return None
 
     @classmethod
-    def extract_features(cls, tree: Tree, content_bytes: bytes, filepath: str, language_name: str) -> Dict[str, List[Dict]]:
-        features = {"symbols": [], "imports": [], "routes": []}
+    def extract_features(cls, tree: Tree, content_bytes: bytes, filepath: str, language_name: str) -> dict[str, list[dict]]:
+        features = {"symbols": [], "imports": [], "routes": [], "calls": []}
         
         q_symbols = cls.load_query(language_name, "symbols")
         q_imports = cls.load_query(language_name, "imports")
         q_routes = cls.load_query(language_name, "routes")
+        q_calls = cls.load_query(language_name, "calls")
         
         if q_symbols:
             cursor = QueryCursor(q_symbols)
@@ -59,10 +61,24 @@ class ParserPlugin(ABC):
                             route_data["handler"] = text
                 if "path" in route_data:
                     features["routes"].append(route_data)
+
+        if q_calls:
+            cursor = QueryCursor(q_calls)
+            for _, match in cursor.matches(tree.root_node):
+                call_data = {"file": filepath}
+                for cap_name, nodes in match.items():
+                    for node in nodes:
+                        text = content_bytes[node.start_byte:node.end_byte].decode("utf8")
+                        if cap_name == "call.function":
+                            call_data["function"] = text
+                        elif cap_name == "call.receiver":
+                            call_data["receiver"] = text
+                if "function" in call_data:
+                    features["calls"].append(call_data)
                     
         return features
 
     @classmethod
     @abstractmethod
-    def parse_files(cls, filepaths: List[str]) -> ParseResult:
+    def parse_files(cls, filepaths: list[str]) -> ParseResult:
         pass

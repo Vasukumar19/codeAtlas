@@ -1,13 +1,14 @@
 import asyncio
-from typing import Optional
+
 from git import Repo
-from app.providers.base import GitProvider
+
 from app.core.logger import get_logger
+from app.providers.base import GitProvider
 
 logger = get_logger(__name__)
 
 class GitPythonProvider(GitProvider):
-    async def clone(self, remote_url: str, clone_path: str, branch: Optional[str] = None) -> str:
+    async def clone(self, remote_url: str, clone_path: str, branch: str | None = None) -> str:
         logger.info("Starting git clone", remote_url=remote_url, clone_path=clone_path, branch=branch)
         def _clone():
             kwargs = {"depth": 1}
@@ -21,7 +22,7 @@ class GitPythonProvider(GitProvider):
         logger.info("Clone complete", commit_hash=commit_hash)
         return commit_hash
 
-    async def get_remote_hash(self, remote_url: str, branch: Optional[str] = None) -> str:
+    async def get_remote_hash(self, remote_url: str, branch: str | None = None) -> str:
         logger.info("Fetching remote hash", remote_url=remote_url, branch=branch)
         def _get_hash():
             import git

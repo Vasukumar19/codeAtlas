@@ -17,11 +17,9 @@ class MockAsyncSession:
 @pytest.mark.asyncio
 async def test_embedding_orchestrator():
     db = MockAsyncSession()
-    provider = SentenceTransformerProvider()
-    store = MemoryVectorStore("test_collection", provider.dimension)
     collection_id = uuid.uuid4()
     
-    orchestrator = EmbeddingOrchestrator(db, provider, store, collection_id)
+    orchestrator = EmbeddingOrchestrator(db, collection_id)
     
     # 1. Create Mock Knowledge Node
     node_id = uuid.uuid4()
@@ -64,8 +62,8 @@ async def test_embedding_orchestrator():
     assert meta.structured_metadata["entity_type"] == "Route"
     assert meta.structured_metadata["framework"] == "FastAPI"
     assert "engine_version" in meta.provenance
-    assert meta.provenance["model"] == "all-MiniLM-L6-v2"
-    assert meta.provenance["provider"] == "SentenceTransformerProvider"
+    assert meta.provenance["model"] == "text-embedding-3-small"
+    assert meta.provenance["provider"] == "OpenAIProvider"
     
     from app.embeddings.chunker import ChunkBuilder
     chunk = ChunkBuilder.build(node, k_version_id)

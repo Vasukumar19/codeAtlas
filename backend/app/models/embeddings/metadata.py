@@ -1,8 +1,11 @@
 import uuid
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, JSON
+
 from pgvector.sqlalchemy import Vector
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+from sqlalchemy import JSON, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class EmbeddingMetadataModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "embedding_metadata"

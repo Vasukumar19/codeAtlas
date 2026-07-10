@@ -1,25 +1,28 @@
 import uuid
-from typing import List
 from datetime import datetime
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.enrichment.domain.schemas import KnowledgeNode
+from app.embeddings.cache import EmbeddingCache
 from app.embeddings.chunker import ChunkBuilder
 from app.embeddings.providers.base import EmbeddingProvider
-from app.embeddings.store.base import VectorStore
-from app.embeddings.cache import EmbeddingCache
+from app.enrichment.domain.schemas import KnowledgeNode
 from app.models.embeddings.metadata import EmbeddingMetadataModel
-from app.models.embeddings.collection import EmbeddingCollectionModel
+
 
 class EmbeddingOrchestrator:
-    def __init__(self, db: AsyncSession, provider: EmbeddingProvider, collection_id: uuid.UUID):
+    def __init__(self, db: AsyncSession, collection_id: uuid.UUID):
         self.db = db
-        self.provider = provider
+        from app.intelligence.models.registry import ModelRegistry
+        self.provider = ModelRegistry.get("OpenAI")
+        if not self.provider:
+            from app.intelligence.models.openai import OpenAIProvider
+            self.provider = OpenAIProvider()
         self.collection_id = collection_id
         self.cache = EmbeddingCache(db)
         self.engine_version = "v1.0"
         
-    async def process_nodes(self, nodes: List[KnowledgeNode], knowledge_version_id: str, batch_size: int = 32) -> int:
+    async def process_nodes(self, nodes: list[KnowledgeNode], knowledge_version_id: str, batch_size: int = 32) -> int:
         # 1. Build & Validate Chunks
         chunks = []
         for node in nodes:

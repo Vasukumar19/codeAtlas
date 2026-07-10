@@ -1,7 +1,8 @@
-from fastapi import Request, FastAPI, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
+
 from app.api.endpoints.health import ApiResponse
 from app.core.logger import get_logger
 

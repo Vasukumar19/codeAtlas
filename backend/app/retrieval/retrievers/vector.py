@@ -1,14 +1,14 @@
-import uuid
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.retrieval.retrievers.base import BaseRetriever, UserQuery, RetrievalResult
-from app.models.embeddings.metadata import EmbeddingMetadataModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.intelligence.models.registry import ModelRegistry
+from app.models.embeddings.metadata import EmbeddingMetadataModel
+from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQuery
+
 
 class VectorRetriever(BaseRetriever):
-    async def retrieve(self, query: UserQuery, db: AsyncSession) -> List[RetrievalResult]:
-        provider = ModelRegistry.get("Gemini")
+    async def retrieve(self, query: UserQuery, db: AsyncSession) -> list[RetrievalResult]:
+        provider = ModelRegistry.get("OpenAI")
         if not provider:
             return []
             

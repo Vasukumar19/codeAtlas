@@ -1,11 +1,13 @@
 import uuid
-from typing import List
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.retrieval.retrievers.base import BaseRetriever, UserQuery, RetrievalResult
+
+from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQuery
 from app.skg.queries import SKGQueries
 
+
 class GraphRetriever(BaseRetriever):
-    async def retrieve(self, query: UserQuery, db: AsyncSession) -> List[RetrievalResult]:
+    async def retrieve(self, query: UserQuery, db: AsyncSession) -> list[RetrievalResult]:
         # If query contains a path-like string, use SKG Queries
         q = query.query.lower()
         if "/" in q:

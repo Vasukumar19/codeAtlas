@@ -1,9 +1,11 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, Enum, ForeignKey, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Enum, ForeignKey, Text, DateTime
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
 from app.models.enums import JobStatus, JobType
 
 if TYPE_CHECKING:

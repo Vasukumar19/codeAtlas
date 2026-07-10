@@ -1,10 +1,11 @@
-from typing import List, Dict
 import uuid
+
 from app.retrieval.domain.schemas import RetrievalResult
 
+
 class ResultFusion:
-    def fuse(self, results_lists: List[List[RetrievalResult]]) -> List[RetrievalResult]:
-        fused_map: Dict[uuid.UUID, RetrievalResult] = {}
+    def fuse(self, results_lists: list[list[RetrievalResult]]) -> list[RetrievalResult]:
+        fused_map: dict[uuid.UUID, RetrievalResult] = {}
         
         for results in results_lists:
             if not results:

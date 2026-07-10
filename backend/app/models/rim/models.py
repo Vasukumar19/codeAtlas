@@ -1,8 +1,11 @@
 import uuid
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, JSON, String
+
 from pgvector.sqlalchemy import Vector
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class RIMDirectoryModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "rim_directories"
@@ -46,3 +49,11 @@ class RIMRouteModel(Base, UUIDMixin, TimestampMixin):
     method: Mapped[str] = mapped_column(String)
     path: Mapped[str] = mapped_column(String)
     handler: Mapped[str] = mapped_column(String)
+
+class RIMCallModel(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "rim_calls"
+    repository_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    repository_version_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    file_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rim_files.id"))
+    function_name: Mapped[str] = mapped_column(String)
+    receiver: Mapped[str | None] = mapped_column(String, nullable=True)

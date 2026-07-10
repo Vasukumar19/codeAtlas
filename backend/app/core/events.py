@@ -1,12 +1,14 @@
-from typing import Callable, Dict, List, Any
 import asyncio
+from collections.abc import Callable
+from typing import Any
+
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)
 
 class EventBus:
     def __init__(self):
-        self.subscribers: Dict[str, List[Callable[..., Any]]] = {}
+        self.subscribers: dict[str, list[Callable[..., Any]]] = {}
 
     def subscribe(self, event_type: str, handler: Callable[..., Any]):
         if event_type not in self.subscribers:

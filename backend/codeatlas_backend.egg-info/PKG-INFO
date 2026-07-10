@@ -12,6 +12,7 @@ Requires-Dist: pydantic>=2.6.1
 Requires-Dist: pydantic-settings>=2.1.0
 Requires-Dist: asyncpg>=0.29.0
 Requires-Dist: psycopg2-binary>=2.9.9
+Requires-Dist: pgvector>=0.2.4
 Requires-Dist: aiosqlite>=0.20.0
 Requires-Dist: httpx>=0.26.0
 Requires-Dist: GitPython>=3.1.41
@@ -22,6 +23,7 @@ Requires-Dist: tree-sitter-typescript>=0.21.0
 Requires-Dist: tree-sitter-java>=0.21.0
 Requires-Dist: tree-sitter-go>=0.21.0
 Requires-Dist: tree-sitter-c-sharp>=0.21.0
+Requires-Dist: tree-sitter-cpp>=0.21.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.5; extra == "dev"

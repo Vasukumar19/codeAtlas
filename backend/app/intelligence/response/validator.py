@@ -1,5 +1,7 @@
 import json
+
 from app.retrieval.domain.schemas import ContextPackage
+
 
 class ResponseValidator:
     def validate(self, raw_response: str, context: ContextPackage) -> bool:

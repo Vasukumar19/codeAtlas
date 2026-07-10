@@ -1,5 +1,6 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 
+
 class RiskEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:
         # Basic heuristic: if it has lots of TODOs in metadata, higher risk.

@@ -1,4 +1,5 @@
-from app.retrieval.domain.schemas import RetrievalIntent, QueryPlan
+from app.retrieval.domain.schemas import QueryPlan, RetrievalIntent
+
 
 class QueryPlanner:
     def plan(self, intent: RetrievalIntent) -> QueryPlan:

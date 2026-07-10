@@ -1,13 +1,15 @@
 import uuid
 from typing import TYPE_CHECKING
+
+from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import String, Enum, ForeignKey
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
 from app.models.enums import RepositoryStatus
 
 if TYPE_CHECKING:
-    from .repository import Repository
     from .job import Job
+    from .repository import Repository
 
 class RepositoryVersion(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "repository_versions"

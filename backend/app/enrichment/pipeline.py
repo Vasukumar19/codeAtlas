@@ -1,19 +1,21 @@
 import uuid
-from typing import List, Any
-from app.enrichment.enrichers.base import KnowledgeContext, BaseEnricher
-from app.enrichment.domain.schemas import KnowledgeNode, KnowledgeIdentity
+from typing import Any
+
+from app.enrichment.domain.schemas import KnowledgeIdentity, KnowledgeNode
+from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 from app.rim.domain.models import DomainEntity
 
+
 class KnowledgePipeline:
-    def __init__(self, enrichers: List[BaseEnricher] = None):
+    def __init__(self, enrichers: list[BaseEnricher] = None):
         if enrichers is None:
             # Default static enrichers
+            from app.enrichment.enrichers.static.dependencies import DependencyEnricher
             from app.enrichment.enrichers.static.framework import FrameworkEnricher
             from app.enrichment.enrichers.static.layer import LayerEnricher
             from app.enrichment.enrichers.static.purpose import PurposeEnricher
-            from app.enrichment.enrichers.static.summary import SummaryEnricher
             from app.enrichment.enrichers.static.risk import RiskEnricher
-            from app.enrichment.enrichers.static.dependencies import DependencyEnricher
+            from app.enrichment.enrichers.static.summary import SummaryEnricher
             
             self.enrichers = [
                 FrameworkEnricher(),
@@ -26,7 +28,7 @@ class KnowledgePipeline:
         else:
             self.enrichers = enrichers
             
-    async def execute(self, rim_entity: DomainEntity, entity_type: str, skg_edges: List[Any], skg_node_id: uuid.UUID = None) -> KnowledgeNode:
+    async def execute(self, rim_entity: DomainEntity, entity_type: str, skg_edges: list[Any], skg_node_id: uuid.UUID = None) -> KnowledgeNode:
         import uuid
         identity = KnowledgeIdentity(
             id=uuid.uuid4(),

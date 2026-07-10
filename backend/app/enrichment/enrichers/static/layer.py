@@ -1,6 +1,7 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 from app.rim.domain.models import DomainFile, DomainSymbol
 
+
 class LayerEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:
         if isinstance(context.rim_entity, DomainFile):

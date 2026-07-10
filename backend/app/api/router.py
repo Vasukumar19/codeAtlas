@@ -2,10 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.api.endpoints import health
-from app.api.endpoints import repositories
-from app.api.endpoints import intelligence
-from app.api.endpoints import exploration
+from app.api.endpoints import exploration, health, intelligence, repositories
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["system"])

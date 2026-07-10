@@ -1,15 +1,16 @@
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db
+from app.intelligence.domain.schemas import StructuredAIResponse
+from app.intelligence.gateway import AIGateway
 from app.models import RepositoryVersion
 from app.retrieval.domain.schemas import UserQuery
 from app.retrieval.engine import HybridRetrievalEngine
-from app.intelligence.gateway import AIGateway
-from app.intelligence.domain.schemas import StructuredAIResponse
-from pydantic import BaseModel
 
 router = APIRouter()
 

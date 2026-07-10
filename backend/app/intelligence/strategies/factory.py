@@ -1,9 +1,10 @@
-from app.retrieval.domain.schemas import RetrievalIntent
-from app.intelligence.strategies.base import ReasoningStrategy
 from app.intelligence.strategies.architecture import ArchitectureStrategy
-from app.intelligence.strategies.impact import ImpactAnalysisStrategy
+from app.intelligence.strategies.base import ReasoningStrategy
 from app.intelligence.strategies.execution_flow import ExecutionFlowStrategy
 from app.intelligence.strategies.general import GeneralStrategy
+from app.intelligence.strategies.impact import ImpactAnalysisStrategy
+from app.retrieval.domain.schemas import RetrievalIntent
+
 
 class StrategyFactory:
     @staticmethod

@@ -1,7 +1,10 @@
 import uuid
-from sqlalchemy.orm import Mapped, mapped_column
+
 from sqlalchemy import JSON, String
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class KnowledgeNodeModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "knowledge_nodes"

@@ -1,20 +1,21 @@
 import uuid
 from dataclasses import dataclass, field
-from typing import List, Optional, Dict, Any
+from typing import Any
+
 
 @dataclass(kw_only=True)
 class DomainEntity:
     id: uuid.UUID
     repository_id: uuid.UUID
     repository_version_id: uuid.UUID
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 @dataclass(kw_only=True)
 class DomainDirectory(DomainEntity):
     path: str
-    parent_id: Optional[uuid.UUID] = None
-    child_directories: List[uuid.UUID] = field(default_factory=list)
-    files: List[uuid.UUID] = field(default_factory=list)
+    parent_id: uuid.UUID | None = None
+    child_directories: list[uuid.UUID] = field(default_factory=list)
+    files: list[uuid.UUID] = field(default_factory=list)
 
 @dataclass(kw_only=True)
 class DomainFile(DomainEntity):
@@ -28,9 +29,9 @@ class DomainSymbol(DomainEntity):
     fully_qualified_name: str
     file_id: uuid.UUID
     symbol_type: str
-    parent_symbol_id: Optional[uuid.UUID] = None
-    imports_used: List[uuid.UUID] = field(default_factory=list)
-    routes_exposed: List[uuid.UUID] = field(default_factory=list)
+    parent_symbol_id: uuid.UUID | None = None
+    imports_used: list[uuid.UUID] = field(default_factory=list)
+    routes_exposed: list[uuid.UUID] = field(default_factory=list)
 
 @dataclass(kw_only=True)
 class DomainImport(DomainEntity):
@@ -43,3 +44,9 @@ class DomainRoute(DomainEntity):
     method: str
     path: str
     handler: str
+
+@dataclass(kw_only=True)
+class DomainCall(DomainEntity):
+    file_id: uuid.UUID
+    function_name: str
+    receiver: str | None = None

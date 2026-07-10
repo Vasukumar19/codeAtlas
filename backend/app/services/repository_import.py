@@ -10,7 +10,13 @@ from sqlalchemy import Select, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models.repository import ImportJob, JobState, Repository, RepositoryState, RepositoryVersion
+from app.models.repository import (
+    ImportJob,
+    JobState,
+    Repository,
+    RepositoryState,
+    RepositoryVersion,
+)
 from app.services.git import GitCloneError, GitService
 from app.services.github import GitHubRepositoryMetadata
 

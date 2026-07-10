@@ -1,16 +1,18 @@
 import time
+
 import tree_sitter_javascript as ts_javascript
 from tree_sitter import Language, Parser
-from typing import List
-from app.parser.plugins.base import ParserPlugin
-from app.parser.models import ParseResult
+
 from app.parser.analyzers.metadata.extractor import MetadataExtractor
+from app.parser.models import ParseResult
+from app.parser.plugins.base import ParserPlugin
+
 
 class JavaScriptPlugin(ParserPlugin):
     LANGUAGE = Language(ts_javascript.language())
 
     @classmethod
-    def parse_files(cls, filepaths: List[str]) -> ParseResult:
+    def parse_files(cls, filepaths: list[str]) -> ParseResult:
         start_time = time.time()
         parser = Parser(cls.LANGUAGE)
         
@@ -20,10 +22,11 @@ class JavaScriptPlugin(ParserPlugin):
         symbols_extracted = []
         imports_extracted = []
         routes_extracted = []
+        calls_extracted = []
         
         for filepath in filepaths:
             try:
-                with open(filepath, "r", encoding="utf-8") as f:
+                with open(filepath, encoding="utf-8") as f:
                     content = f.read()
                 content_bytes = bytes(content, "utf8")
                 tree = parser.parse(content_bytes)
@@ -33,6 +36,7 @@ class JavaScriptPlugin(ParserPlugin):
                 symbols_extracted.extend(features["symbols"])
                 imports_extracted.extend(features["imports"])
                 routes_extracted.extend(features["routes"])
+                calls_extracted.extend(features["calls"])
                 
                 meta = MetadataExtractor.extract_from_file(content)
                 metadata["total_loc"] += meta["loc"]
@@ -47,6 +51,7 @@ class JavaScriptPlugin(ParserPlugin):
             symbols=symbols_extracted,
             imports=imports_extracted,
             routes=routes_extracted,
+            calls=calls_extracted,
             language="javascript",
             parser_version="tree-sitter-javascript",
             parse_duration=time.time() - start_time,

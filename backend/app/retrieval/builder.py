@@ -1,8 +1,9 @@
-from typing import List
+
 from app.retrieval.domain.schemas import ContextPackage, RetrievalResult
 
+
 class ContextBuilder:
-    def build(self, ranked_results: List[RetrievalResult], repository_id: str) -> ContextPackage:
+    def build(self, ranked_results: list[RetrievalResult], repository_id: str) -> ContextPackage:
         package = ContextPackage(repository_summary="Automated repo summary")
         
         for r in ranked_results:

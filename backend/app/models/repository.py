@@ -1,7 +1,9 @@
 from typing import TYPE_CHECKING
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from sqlalchemy import String
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from .repository_version import RepositoryVersion

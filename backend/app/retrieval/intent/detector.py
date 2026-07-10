@@ -1,6 +1,8 @@
 import json
-from app.retrieval.domain.schemas import RetrievalIntent, UserQuery
+
 from app.intelligence.models.registry import ModelRegistry
+from app.retrieval.domain.schemas import RetrievalIntent, UserQuery
+
 
 class IntentDetector:
     async def detect(self, query: UserQuery) -> RetrievalIntent:

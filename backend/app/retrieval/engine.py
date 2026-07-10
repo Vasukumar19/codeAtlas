@@ -1,17 +1,19 @@
+import asyncio
 import time
 import uuid
-import asyncio
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.retrieval.domain.schemas import UserQuery, ContextPackage
+from app.models.retrieval.trace import RetrievalTraceModel
+from app.retrieval.builder import ContextBuilder
+from app.retrieval.domain.schemas import ContextPackage, UserQuery
+from app.retrieval.fusion import ResultFusion
 from app.retrieval.intent.detector import IntentDetector
 from app.retrieval.planner import QueryPlanner
-from app.retrieval.registry import RetrievalRegistry
-from app.retrieval.fusion import ResultFusion
 from app.retrieval.ranker import ContextRanker
-from app.retrieval.builder import ContextBuilder
+from app.retrieval.registry import RetrievalRegistry
 from app.retrieval.validator import RetrievalValidator
-from app.models.retrieval.trace import RetrievalTraceModel
+
 
 class HybridRetrievalEngine:
     def __init__(self, db: AsyncSession):

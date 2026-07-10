@@ -1,12 +1,11 @@
-from typing import Dict, Any
 
 class CapabilityRegistry:
-    _capabilities: Dict[str, Dict[str, bool]] = {}
+    _capabilities: dict[str, dict[str, bool]] = {}
 
     @classmethod
-    def register(cls, language: str, capabilities: Dict[str, bool]):
+    def register(cls, language: str, capabilities: dict[str, bool]):
         cls._capabilities[language] = capabilities
 
     @classmethod
-    def get(cls, language: str) -> Dict[str, bool]:
+    def get(cls, language: str) -> dict[str, bool]:
         return cls._capabilities.get(language, {})

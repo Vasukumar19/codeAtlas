@@ -1,12 +1,13 @@
 import re
-from typing import Dict, Any, List
+from typing import Any
+
 
 class MetadataExtractor:
     TODO_PATTERN = re.compile(r'(?i)(?:TODO|FIXME|BUG)\s*[:]\s*(.*)')
     DEPRECATED_PATTERN = re.compile(r'(?i)@deprecated')
     
     @classmethod
-    def extract_from_file(cls, content: str) -> Dict[str, Any]:
+    def extract_from_file(cls, content: str) -> dict[str, Any]:
         lines = content.splitlines()
         loc = len(lines)
         blank_lines = sum(1 for line in lines if not line.strip())

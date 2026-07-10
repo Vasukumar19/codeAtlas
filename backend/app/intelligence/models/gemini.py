@@ -1,7 +1,9 @@
-import json
 import os
+
 import httpx
+
 from app.intelligence.models.base import AIModelProvider
+
 
 class GeminiProvider(AIModelProvider):
     def __init__(self, api_key: str = None):

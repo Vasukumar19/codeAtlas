@@ -1,8 +1,8 @@
-from typing import Dict, Type
 from app.intelligence.models.base import AIModelProvider
 
+
 class ModelRegistry:
-    _providers: Dict[str, AIModelProvider] = {}
+    _providers: dict[str, AIModelProvider] = {}
     
     @classmethod
     def register(cls, name: str, provider: AIModelProvider):

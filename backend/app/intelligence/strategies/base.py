@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+
 class ReasoningStrategy(ABC):
     def build_system_instruction(self) -> str:
         base = (
@@ -19,6 +20,23 @@ class ReasoningStrategy(ABC):
             "Use the provided context to answer. When citing context, include the exact UUID in citations."
         )
         return base + "\n\n" + self.get_specific_instructions()
+        
+    @property
+    @abstractmethod
+    def response_type(self) -> str:
+        """The type string to return in the JSON response."""
+        pass
+
+    @property
+    @abstractmethod
+    def response_title(self) -> str:
+        """The title string to return in the JSON response."""
+        pass
+        
+    @property
+    def requires_team(self) -> bool:
+        """Whether this strategy requires the Multi-Agent team execution."""
+        return False
         
     @abstractmethod
     def get_specific_instructions(self) -> str:

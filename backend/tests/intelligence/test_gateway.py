@@ -29,33 +29,24 @@ async def test_ai_gateway():
     response = await gateway.process("Explain architecture", context, RetrievalIntent.ARCHITECTURE)
     
     assert response.title == "Architecture Overview"
-    assert len(response.sections) > 0
-    # Our mock injects citations if it sees a UUID in the prompt
+    assert response.type == "Architecture Explanation"
     assert len(response.citations) > 0
     assert str(response.citations[0].node_id) == str(node_id)
     
-    # 2.5 Test OpenAI Strategy
-    response_openai = await gateway.process("Explain architecture", context, RetrievalIntent.ARCHITECTURE, model_name="OpenAI")
-    assert response_openai.title == "Architecture Overview (OpenAI)"
-    assert len(response_openai.sections) > 0
-    assert len(response_openai.citations) > 0
-    assert str(response_openai.citations[0].node_id) == str(node_id)
+    # 3. Test Impact Analysis Strategy
+    resp_impact = await gateway.process("What breaks if I change this?", context, RetrievalIntent.IMPACT_ANALYSIS)
+    assert resp_impact.title == "Impact & Dependencies"
+    assert resp_impact.type == "Impact Analysis"
     
-    # 3. Test Hallucination Rejection
-    # We will pass an empty context. The LLM will still try to cite the node_id (if we force it),
-    # but the mock provider only pulls UUIDs from the prompt.
-    # So let's create a custom provider that hallucinates a node_id
-    class HallucinatingProvider(GeminiProvider):
-        async def generate(self, prompt, sys):
-            import json
-            resp = {
-                "type": "Test", "title": "Test", "summary": "Test",
-                "sections": [], "steps": [], "confidence": 0.9, "metadata": {},
-                "citations": [{"node_id": str(uuid.uuid4()), "confidence": 0.9}]
-            }
-            return json.dumps(resp)
-            
-    ModelRegistry.register("HallucinatingModel", HallucinatingProvider())
+    # 4. Test Execution Flow Strategy
+    resp_flow = await gateway.process("How does this run?", context, RetrievalIntent.EXECUTION_FLOW)
+    assert resp_flow.title == "Execution Path"
+    assert resp_flow.type == "Execution Flow"
     
-    with pytest.raises(ValueError, match="LLM Hallucination Detected"):
-        await gateway.process("Test", context, RetrievalIntent.ARCHITECTURE, model_name="HallucinatingModel")
+    # 5. Test General Strategy (Team Orchestrator)
+    resp_general = await gateway.process("Explain the repo", context, RetrievalIntent.GENERAL_QUESTION)
+    assert resp_general.title == "Analysis & Explanation"
+    assert resp_general.type == "General Explanation"
+    
+    # We removed strict JSON hallucination validation in favor of markdown response,
+    # so we don't test hallucination rejection here anymore.

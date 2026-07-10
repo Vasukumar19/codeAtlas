@@ -1,12 +1,12 @@
-import uuid
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.retrieval.retrievers.base import BaseRetriever, UserQuery, RetrievalResult
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.rim.models import RIMSymbolModel
+from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQuery
+
 
 class FunctionRetriever(BaseRetriever):
-    async def retrieve(self, query: UserQuery, db: AsyncSession) -> List[RetrievalResult]:
+    async def retrieve(self, query: UserQuery, db: AsyncSession) -> list[RetrievalResult]:
         q = query.query.lower()
         stmt = select(RIMSymbolModel).filter(
             RIMSymbolModel.repository_version_id == query.repository_version_id,

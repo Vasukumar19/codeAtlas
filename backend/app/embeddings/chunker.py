@@ -1,7 +1,8 @@
 import hashlib
-from typing import Optional, List
+
 from app.embeddings.schemas import StructuredChunk
 from app.enrichment.domain.schemas import KnowledgeNode
+
 
 class ChunkValidator:
     ALLOWED_ENTITY_TYPES = {
@@ -24,7 +25,7 @@ class ChunkValidator:
 
 class ChunkBuilder:
     @staticmethod
-    def build(node: KnowledgeNode, knowledge_version_id: str) -> Optional[StructuredChunk]:
+    def build(node: KnowledgeNode, knowledge_version_id: str) -> StructuredChunk | None:
         # Semantic composition
         parts = []
         

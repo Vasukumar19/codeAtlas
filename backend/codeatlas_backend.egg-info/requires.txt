@@ -6,6 +6,7 @@ pydantic>=2.6.1
 pydantic-settings>=2.1.0
 asyncpg>=0.29.0
 psycopg2-binary>=2.9.9
+pgvector>=0.2.4
 aiosqlite>=0.20.0
 httpx>=0.26.0
 GitPython>=3.1.41
@@ -16,6 +17,7 @@ tree-sitter-typescript>=0.21.0
 tree-sitter-java>=0.21.0
 tree-sitter-go>=0.21.0
 tree-sitter-c-sharp>=0.21.0
+tree-sitter-cpp>=0.21.0
 
 [dev]
 pytest>=8.0.0

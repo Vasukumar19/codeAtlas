@@ -1,12 +1,12 @@
-import uuid
-from typing import List
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.retrieval.retrievers.base import BaseRetriever, UserQuery, RetrievalResult
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.rim.models import RIMRouteModel
+from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQuery
+
 
 class RouteRetriever(BaseRetriever):
-    async def retrieve(self, query: UserQuery, db: AsyncSession) -> List[RetrievalResult]:
+    async def retrieve(self, query: UserQuery, db: AsyncSession) -> list[RetrievalResult]:
         # Search for routes matching the query in their path
         q = query.query.lower()
         stmt = select(RIMRouteModel).filter(

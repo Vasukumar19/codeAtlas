@@ -1,8 +1,8 @@
-from typing import Dict, Type
 from app.retrieval.retrievers.base import BaseRetriever
 
+
 class RetrievalRegistry:
-    _retrievers: Dict[str, BaseRetriever] = {}
+    _retrievers: dict[str, BaseRetriever] = {}
     
     @classmethod
     def register(cls, name: str, retriever: BaseRetriever):

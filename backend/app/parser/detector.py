@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+
 
 class LanguageDetector:
     EXTENSIONS = {
@@ -49,7 +49,7 @@ class LanguageDetector:
         
         # 3. Shebang match
         try:
-            with open(filepath, "r", encoding="utf-8") as f:
+            with open(filepath, encoding="utf-8") as f:
                 first_line = f.readline().strip()
                 if first_line.startswith("#!"):
                     for key, lang in cls.SHEBANGS.items():

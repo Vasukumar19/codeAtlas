@@ -1,5 +1,6 @@
 import enum
 
+
 class JobStatus(str, enum.Enum):
     PENDING = "PENDING"
     QUEUED = "QUEUED"
@@ -15,6 +16,8 @@ class RepositoryStatus(str, enum.Enum):
     READY_TO_PARSE = "READY_TO_PARSE"
     PARSING = "PARSING"
     PARSED = "PARSED"
+    EMBEDDING = "EMBEDDING"
+    READY = "READY"
     FAILED = "FAILED"
 
 class JobType(str, enum.Enum):

@@ -1,15 +1,13 @@
-from typing import List, Optional, Tuple, Any
-from pydantic import BaseModel, Field
 import uuid
 
-from typing import Dict
-from datetime import datetime
+from pydantic import BaseModel, Field
+
 
 class KnowledgeProvenance(BaseModel):
     generated_by: str
     generated_at: str
     confidence: float
-    evidence: Optional[str] = None
+    evidence: str | None = None
 
 class KnowledgeIdentity(BaseModel):
     id: uuid.UUID
@@ -17,28 +15,28 @@ class KnowledgeIdentity(BaseModel):
     repository_id: uuid.UUID
     repository_version_id: uuid.UUID
     rim_entity_id: uuid.UUID
-    skg_node_id: Optional[uuid.UUID] = None
+    skg_node_id: uuid.UUID | None = None
 
 class KnowledgeSemantics(BaseModel):
-    summary: Optional[Tuple[str, float]] = None # (Text, Confidence)
-    purposes: List[Tuple[str, float]] = Field(default_factory=list)
-    responsibilities: List[Tuple[str, float]] = Field(default_factory=list)
+    summary: tuple[str, float] | None = None # (Text, Confidence)
+    purposes: list[tuple[str, float]] = Field(default_factory=list)
+    responsibilities: list[tuple[str, float]] = Field(default_factory=list)
 
 class KnowledgeMetrics(BaseModel):
-    complexity: Optional[Tuple[str, float]] = None
-    risk_level: Optional[Tuple[str, float]] = None
+    complexity: tuple[str, float] | None = None
+    risk_level: tuple[str, float] | None = None
 
 class KnowledgeDocumentation(BaseModel):
-    docstrings: List[str] = Field(default_factory=list)
-    comments: List[str] = Field(default_factory=list)
+    docstrings: list[str] = Field(default_factory=list)
+    comments: list[str] = Field(default_factory=list)
 
 class KnowledgeRelationships(BaseModel):
-    dependencies: List[Tuple[str, float]] = Field(default_factory=list)
+    dependencies: list[tuple[str, float]] = Field(default_factory=list)
 
 class KnowledgeMetadata(BaseModel):
-    framework: Optional[Tuple[str, float]] = None
-    layer: Optional[Tuple[str, float]] = None
-    tags: List[Tuple[str, float]] = Field(default_factory=list)
+    framework: tuple[str, float] | None = None
+    layer: tuple[str, float] | None = None
+    tags: list[tuple[str, float]] = Field(default_factory=list)
 
 class KnowledgeNode(BaseModel):
     identity: KnowledgeIdentity
@@ -47,4 +45,4 @@ class KnowledgeNode(BaseModel):
     documentation: KnowledgeDocumentation = Field(default_factory=KnowledgeDocumentation)
     relationships: KnowledgeRelationships = Field(default_factory=KnowledgeRelationships)
     metadata: KnowledgeMetadata = Field(default_factory=KnowledgeMetadata)
-    provenance: Dict[str, KnowledgeProvenance] = Field(default_factory=dict)
+    provenance: dict[str, KnowledgeProvenance] = Field(default_factory=dict)

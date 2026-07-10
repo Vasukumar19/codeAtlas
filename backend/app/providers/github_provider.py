@@ -1,7 +1,9 @@
+from typing import Any
+
 import httpx
-from typing import Dict, Any
-from app.providers.base import RepositoryProvider
+
 from app.core.logger import get_logger
+from app.providers.base import RepositoryProvider
 
 logger = get_logger(__name__)
 
@@ -10,13 +12,13 @@ class GitHubProvider(RepositoryProvider):
         self.token = token
         self.base_url = "https://api.github.com"
         
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         headers = {"Accept": "application/vnd.github.v3+json"}
         if self.token:
             headers["Authorization"] = f"token {self.token}"
         return headers
 
-    async def normalize_identity(self, url: str) -> Dict[str, str]:
+    async def normalize_identity(self, url: str) -> dict[str, str]:
         # Simple normalization: extract owner/name
         url = url.replace("git@github.com:", "https://github.com/")
         if url.endswith(".git"):
@@ -43,7 +45,7 @@ class GitHubProvider(RepositoryProvider):
             )
             return response.status_code == 200
 
-    async def get_metadata(self, owner: str, name: str) -> Dict[str, Any]:
+    async def get_metadata(self, owner: str, name: str) -> dict[str, Any]:
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 f"{self.base_url}/repos/{owner}/{name}",

@@ -8,15 +8,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.config import settings
-from app.core.middleware import RequestIDMiddleware
 from app.core.exceptions import setup_exception_handlers
-
+from app.core.middleware import RequestIDMiddleware
 from app.db.base import Base
-from app.api.deps import get_db
 from app.db.session import engine
-from app.intelligence.models.registry import ModelRegistry
 from app.intelligence.models.gemini import GeminiProvider
 from app.intelligence.models.openai import OpenAIProvider
+from app.intelligence.models.registry import ModelRegistry
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:

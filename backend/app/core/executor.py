@@ -1,5 +1,8 @@
-from typing import Callable, Any, Awaitable
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 from fastapi import BackgroundTasks
+
 from app.core.logger import get_logger
 
 logger = get_logger(__name__)

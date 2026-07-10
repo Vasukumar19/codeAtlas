@@ -1,8 +1,11 @@
 
 import uuid
+
+from sqlalchemy import JSON, String
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import JSON, String, ForeignKey
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
+
 
 class SKGEdgeModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "skg_edges"

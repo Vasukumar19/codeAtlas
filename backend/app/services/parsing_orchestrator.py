@@ -2,22 +2,34 @@ import os
 import time
 import uuid
 from collections import defaultdict
-from typing import Dict, List
+
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from app.models import RepositoryVersion, ParsingReport
-from app.models.enums import RepositoryStatus
-from app.models.rim.models import RIMDirectoryModel, RIMFileModel, RIMSymbolModel, RIMImportModel, RIMRouteModel
-from app.parser.models import ParseResult
-from app.parser.detector import LanguageDetector
-from app.parser.registry import ParserRegistry
-from app.parser import initialize_registry
-from app.core.logger import get_logger
+
 from app.core.events import event_bus
-from app.skg.builder import SKGBuilder
+from app.core.logger import get_logger
 from app.enrichment.pipeline import KnowledgePipeline
-from app.rim.domain.models import DomainDirectory, DomainFile, DomainSymbol, DomainImport, DomainRoute
-from sqlalchemy import select
+from app.models import ParsingReport, RepositoryVersion
+from app.models.enums import RepositoryStatus
+from app.models.rim.models import (
+    RIMDirectoryModel,
+    RIMFileModel,
+    RIMImportModel,
+    RIMRouteModel,
+    RIMSymbolModel,
+)
+from app.parser import initialize_registry
+from app.parser.detector import LanguageDetector
+from app.parser.models import ParseResult
+from app.parser.registry import ParserRegistry
+from app.rim.domain.models import (
+    DomainDirectory,
+    DomainFile,
+    DomainImport,
+    DomainRoute,
+    DomainSymbol,
+)
+from app.skg.builder import SKGBuilder
 
 logger = get_logger(__name__)
 
@@ -46,7 +58,7 @@ class ParsingOrchestrator:
         start_time = time.time()
         
         # 1. Walk directory and group files by language
-        files_by_lang: Dict[str, List[str]] = defaultdict(list)
+        files_by_lang: dict[str, list[str]] = defaultdict(list)
         for root, _, files in os.walk(version.clone_path):
             if ".git" in root:
                 continue
@@ -110,27 +122,48 @@ class ParsingOrchestrator:
         symbols = (await self.db.execute(select(RIMSymbolModel).filter_by(repository_version_id=version.id))).scalars().all()
         imports = (await self.db.execute(select(RIMImportModel).filter_by(repository_version_id=version.id))).scalars().all()
         routes = (await self.db.execute(select(RIMRouteModel).filter_by(repository_version_id=version.id))).scalars().all()
+        calls = (await self.db.execute(select(RIMCallModel).filter_by(repository_version_id=version.id))).scalars().all()
 
+        from app.rim.domain.models import DomainDirectory, DomainFile, DomainSymbol, DomainImport, DomainRoute, DomainCall
         domain_dirs = [DomainDirectory(id=d.id, repository_id=d.repository_id, repository_version_id=d.repository_version_id, path=d.path, parent_id=d.parent_id) for d in dirs]
         domain_files = [DomainFile(id=f.id, repository_id=f.repository_id, repository_version_id=f.repository_version_id, path=f.path, directory_id=f.directory_id, language=f.language) for f in files]
         domain_symbols = [DomainSymbol(id=s.id, repository_id=s.repository_id, repository_version_id=s.repository_version_id, file_id=s.file_id, name=s.name, fully_qualified_name=s.fully_qualified_name, symbol_type=s.symbol_type, parent_symbol_id=s.parent_symbol_id) for s in symbols]
         domain_imports = [DomainImport(id=i.id, repository_id=i.repository_id, repository_version_id=i.repository_version_id, file_id=i.file_id, raw_statement=i.raw_statement) for i in imports]
         domain_routes = [DomainRoute(id=r.id, repository_id=r.repository_id, repository_version_id=r.repository_version_id, file_id=r.file_id, method=r.method, path=r.path, handler=r.handler) for r in routes]
+        domain_calls = [DomainCall(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver) for c in calls]
 
         # 2. Build SKG
         builder = SKGBuilder(self.db, version.id)
         builder.build_structural_edges(domain_dirs, domain_files, domain_symbols)
         builder.build_route_edges(domain_routes, domain_symbols)
         builder.build_import_edges(domain_imports, domain_files)
+        builder.build_call_edges(domain_calls, domain_symbols)
+        builder.build_advanced_edges(domain_symbols)
         await builder.commit_to_database()
 
         # 3. Knowledge Pipeline
         pipeline = KnowledgePipeline()
         # For this scope, let's just enrich files
         # A full system would persist KnowledgeNodes in a NoSQL/graph db or a separate table
+        knowledge_nodes = []
         for f in domain_files:
             node = await pipeline.execute(f, "File", builder.edges, None)
-            # In Verification scope, we just ensure it executes without crashing.
+            if node:
+                knowledge_nodes.append(node)
+
+        # 4. Embeddings
+        if knowledge_nodes:
+            version.status = RepositoryStatus.EMBEDDING
+            await self.db.commit()
+            
+            from app.embeddings.orchestrator import EmbeddingOrchestrator
+            collection_id = version.repository_id # Using repository_id as collection_id
+            embedding_orch = EmbeddingOrchestrator(self.db, collection_id)
+            embedded_count = await embedding_orch.process_nodes(knowledge_nodes, str(version.id))
+            logger.info("Embeddings completed", embedded_count=embedded_count)
+            
+        version.status = RepositoryStatus.READY
+        await self.db.commit()
 
     async def persist_rim(self, version: RepositoryVersion, parse_result: ParseResult):
         # We need a robust way to avoid duplicate directories. 

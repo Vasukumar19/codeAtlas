@@ -1,6 +1,7 @@
 from app.enrichment.enrichers.base import BaseEnricher, KnowledgeContext
 from app.models.enums import SKGEdgeType
 
+
 class FrameworkEnricher(BaseEnricher):
     async def enrich(self, context: KnowledgeContext) -> KnowledgeContext:
         if context.node.identity.entity_type == "Repository":

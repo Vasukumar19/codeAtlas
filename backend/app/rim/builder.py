@@ -1,11 +1,27 @@
-import uuid
 import os
-from typing import Dict, List
+import uuid
+
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.rim.models import (
+    RIMDirectoryModel,
+    RIMFileModel,
+    RIMImportModel,
+    RIMRouteModel,
+    RIMSymbolModel,
+    RIMCallModel,
+)
 from app.parser.models import ParseResult
-from app.rim.domain.models import DomainDirectory, DomainFile, DomainSymbol, DomainImport, DomainRoute
+from app.rim.domain.models import (
+    DomainDirectory,
+    DomainFile,
+    DomainImport,
+    DomainRoute,
+    DomainSymbol,
+    DomainCall,
+)
 from app.rim.identity import IdentityGenerator
-from app.models.rim.models import RIMDirectoryModel, RIMFileModel, RIMSymbolModel, RIMImportModel, RIMRouteModel
+
 
 class RIMBuilderPipeline:
     def __init__(self, db: AsyncSession, repository_id: uuid.UUID, repository_version_id: uuid.UUID):
@@ -13,11 +29,12 @@ class RIMBuilderPipeline:
         self.repo_id = repository_id
         self.version_id = repository_version_id
         
-        self.directories: Dict[str, DomainDirectory] = {}
-        self.files: List[DomainFile] = []
-        self.symbols: List[DomainSymbol] = []
-        self.imports: List[DomainImport] = []
-        self.routes: List[DomainRoute] = []
+        self.directories: dict[str, DomainDirectory] = {}
+        self.files: list[DomainFile] = []
+        self.symbols: list[DomainSymbol] = []
+        self.imports: list[DomainImport] = []
+        self.routes: list[DomainRoute] = []
+        self.calls: list[DomainCall] = []
 
     def _ensure_directory(self, path: str) -> uuid.UUID:
         dir_path = os.path.dirname(path)
@@ -82,6 +99,15 @@ class RIMBuilderPipeline:
                 file_id=file_id, method=route["method"], path=route["path"], handler=route.get("handler", "")
             ))
             
+        for call in getattr(pr, "calls", []):
+            filepath = call["file"]
+            file_id = IdentityGenerator.generate_file_id(self.repo_id, filepath)
+            call_id = uuid.uuid4() # We can use a random UUID since calls are transient edges often
+            self.calls.append(DomainCall(
+                id=call_id, repository_id=self.repo_id, repository_version_id=self.version_id,
+                file_id=file_id, function_name=call["function"], receiver=call.get("receiver")
+            ))
+            
         # 4. Relationship Resolution
         # Explicit hierarchical resolution would link Function->Parent Class etc. 
         # For this scope, the flat IDs and foreign keys serve as the exact basis for graphs.
@@ -102,5 +128,8 @@ class RIMBuilderPipeline:
             
         for r in self.routes:
             self.db.add(RIMRouteModel(id=r.id, repository_id=r.repository_id, repository_version_id=r.repository_version_id, file_id=r.file_id, method=r.method, path=r.path, handler=r.handler))
+            
+        for c in self.calls:
+            self.db.add(RIMCallModel(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver))
             
         await self.db.commit()

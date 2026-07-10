@@ -1,6 +1,7 @@
 import json
-from typing import Dict, Any
+
 from app.retrieval.domain.schemas import ContextPackage
+
 
 class ContextCompressor:
     def compress(self, package: ContextPackage) -> str:

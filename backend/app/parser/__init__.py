@@ -1,11 +1,12 @@
-from app.parser.registry import ParserRegistry
-from app.parser.plugins.python_plugin import PythonPlugin
-from app.parser.plugins.javascript_plugin import JavaScriptPlugin
-from app.parser.plugins.typescript_plugin import TypeScriptPlugin
-from app.parser.plugins.java_plugin import JavaPlugin
-from app.parser.plugins.go_plugin import GoPlugin
-from app.parser.plugins.csharp_plugin import CSharpPlugin
 from app.parser.plugins.cpp_plugin import CppPlugin
+from app.parser.plugins.csharp_plugin import CSharpPlugin
+from app.parser.plugins.go_plugin import GoPlugin
+from app.parser.plugins.java_plugin import JavaPlugin
+from app.parser.plugins.javascript_plugin import JavaScriptPlugin
+from app.parser.plugins.python_plugin import PythonPlugin
+from app.parser.plugins.typescript_plugin import TypeScriptPlugin
+from app.parser.registry import ParserRegistry
+
 
 def initialize_registry():
     ParserRegistry.register("python", PythonPlugin, {"ast": True, "metadata": True})

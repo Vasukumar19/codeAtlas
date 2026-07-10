@@ -1,8 +1,10 @@
 import uuid
 from typing import TYPE_CHECKING
+
+from sqlalchemy import JSON, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import ForeignKey, JSON
-from app.db.base_class import Base, UUIDMixin, TimestampMixin
+
+from app.db.base_class import Base, TimestampMixin, UUIDMixin
 
 if TYPE_CHECKING:
     from .repository_version import RepositoryVersion

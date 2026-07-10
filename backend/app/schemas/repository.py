@@ -1,7 +1,9 @@
-from pydantic import BaseModel, HttpUrl
 import uuid
-from typing import Optional
-from app.models.enums import RepositoryStatus, JobStatus
+
+from pydantic import BaseModel, HttpUrl
+
+from app.models.enums import JobStatus, RepositoryStatus
+
 
 class ImportRepositoryRequest(BaseModel):
     url: HttpUrl
@@ -12,15 +14,15 @@ class RepositoryResponse(BaseModel):
     owner: str
     name: str
     remote_url: str
-    default_branch: Optional[str]
+    default_branch: str | None
 
     model_config = {"from_attributes": True}
 
 class RepositoryStatusResponse(BaseModel):
     repository_id: uuid.UUID
-    version_id: Optional[uuid.UUID]
+    version_id: uuid.UUID | None
     status: RepositoryStatus
-    job_id: Optional[uuid.UUID]
-    job_status: Optional[JobStatus]
+    job_id: uuid.UUID | None
+    job_status: JobStatus | None
     
     model_config = {"from_attributes": True}
