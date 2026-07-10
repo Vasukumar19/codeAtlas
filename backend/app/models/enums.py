@@ -21,3 +21,15 @@ class JobType(str, enum.Enum):
     IMPORT = "IMPORT"
     REFRESH = "REFRESH"
     PARSE = "PARSE"
+
+class SKGEdgeType(str, enum.Enum):
+    CONTAINS = "CONTAINS"
+    IMPORTS = "IMPORTS"
+    CALLS = "CALLS"
+    EXTENDS = "EXTENDS"
+    IMPLEMENTS = "IMPLEMENTS"
+    DECLARES = "DECLARES"
+    USES = "USES"
+    RETURNS = "RETURNS"
+    ROUTES_TO = "ROUTES_TO"
+    DEPENDS_ON = "DEPENDS_ON"

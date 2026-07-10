@@ -1,3 +1,7 @@
+import os
+
+files = {
+    "backend/app/parser/plugins/python_plugin.py": """
 import time
 import os
 from pathlib import Path
@@ -72,7 +76,7 @@ class PythonPlugin(ParserPlugin):
                                 if cap_name == "route.method":
                                     route_data["method"] = text.upper()
                                 elif cap_name == "route.path":
-                                    route_data["path"] = text.strip('"\'')
+                                    route_data["path"] = text.strip('"\\'')
                                 elif cap_name == "route.handler":
                                     route_data["handler"] = text
                         if "path" in route_data:
@@ -96,3 +100,11 @@ class PythonPlugin(ParserPlugin):
             parse_duration=duration,
             metadata=metadata
         )
+"""
+}
+
+for path, content in files.items():
+    full_path = os.path.join("c:/Users/kumar/project/codeAtlas", path)
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, "w", encoding="utf-8") as f:
+        f.write(content.strip() + "\n")
