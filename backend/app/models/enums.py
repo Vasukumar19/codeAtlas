@@ -13,8 +13,11 @@ class RepositoryStatus(str, enum.Enum):
     QUEUED = "QUEUED"
     CLONING = "CLONING"
     READY_TO_PARSE = "READY_TO_PARSE"
+    PARSING = "PARSING"
+    PARSED = "PARSED"
     FAILED = "FAILED"
 
 class JobType(str, enum.Enum):
     IMPORT = "IMPORT"
     REFRESH = "REFRESH"
+    PARSE = "PARSE"
