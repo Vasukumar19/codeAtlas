@@ -18,6 +18,8 @@ export function LeftSidebar() {
     api.getRepositories().then(setRepos).catch(console.error);
   }, []);
 
+  const activeRepoId = id || (repos.length > 0 ? repos[repos.length - 1].id : null);
+
   useEffect(() => {
     if (!searchQuery) {
       setSearchResults([]);
@@ -26,9 +28,8 @@ export function LeftSidebar() {
     const timer = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const activeRepo = repos.length > 0 ? repos[repos.length - 1].id : null;
-        if (activeRepo) {
-          const results = await api.searchRepository(activeRepo, searchQuery);
+        if (activeRepoId) {
+          const results = await api.searchRepository(activeRepoId, searchQuery);
           setSearchResults(results);
         }
       } catch (e) {
@@ -38,7 +39,7 @@ export function LeftSidebar() {
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, repos]);
+  }, [searchQuery, activeRepoId]);
 
   return (
     <div className="w-64 flex flex-col bg-surface border-r border-border h-full p-4">
@@ -107,7 +108,7 @@ export function LeftSidebar() {
                 <li className="px-3 py-2 text-gray-500 text-sm">No results found</li>
               ) : (
                 searchResults.map(res => (
-                  <li key={res.id} onClick={() => { setActiveEntity(res); navigate(`/repo/${repos[repos.length - 1].id}/flow`); }} className="px-3 py-2 rounded-md text-xs cursor-pointer hover:bg-white/10 transition-colors flex items-center gap-2">
+                  <li key={res.id} onClick={() => { setActiveEntity(res); navigate(`/repo/${activeRepoId}/flow`); }} className="px-3 py-2 rounded-md text-xs cursor-pointer hover:bg-white/10 transition-colors flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${res.type === 'file' ? 'bg-blue-500' : 'bg-purple-500'}`}></span>
                     <span className="truncate" title={res.name}>{res.name.split('/').pop()}</span>
                   </li>
