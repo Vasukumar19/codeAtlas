@@ -2,10 +2,16 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 
+from app.api.deps import get_db
+
 @pytest.fixture
-async def client():
+async def client(db_session):
+    def override_get_db():
+        yield db_session
+    app.dependency_overrides[get_db] = override_get_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
+    app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
 async def test_list_repositories_empty(client: AsyncClient):

@@ -16,6 +16,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/repository/:id" element={<Repository />} />
         <Route path="/repo/:id/flow" element={<GraphExplorer />} />
+        <Route path="/repo/:id/analysis" element={<Analysis />} />
         <Route path="/analysis" element={<Analysis />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

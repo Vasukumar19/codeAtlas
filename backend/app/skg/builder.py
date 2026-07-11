@@ -15,6 +15,18 @@ from app.rim.domain.models import (
     DomainReturn,
 )
 
+import re
+
+def _extract_inner_types(type_str: str) -> list[str]:
+    # Find all capitalized or identifier-like tokens in the type string,
+    # ignoring generic keywords and primitive types.
+    ignore_words = {'list', 'dict', 'set', 'tuple', 'union', 'optional', 'map',
+                    'List', 'Dict', 'Set', 'Tuple', 'Union', 'Optional', 'Map',
+                    'str', 'int', 'float', 'bool', 'None', 'any', 'Any', 'void', 'Void'}
+    tokens = re.findall(r'\b[a-zA-Z_][a-zA-Z0-9_]*\b', type_str)
+    return [t for t in tokens if t not in ignore_words]
+
+
 
 class SKGBuilder:
     def __init__(self, db: AsyncSession, repository_version_id: uuid.UUID):
@@ -280,50 +292,56 @@ class SKGBuilder:
                 imported_files[edge.source_id].add(edge.target_id)
 
         for ret in returns:
-            if ret.return_type not in symbol_by_name:
-                continue
-
             # Find the symbol representing the function
             func_symbol = symbol_by_file_and_name.get((ret.file_id, ret.function_name))
             if not func_symbol:
                 continue
 
-            # 1. Try to resolve to the same file
-            same_file_symbols = [s for s in symbol_by_name[ret.return_type] if s.file_id == ret.file_id]
-            if same_file_symbols:
-                for target_symbol in same_file_symbols:
+            # Extract all potential inner type names (e.g. List[User] -> ['User'])
+            inner_types = _extract_inner_types(ret.return_type)
+            if not inner_types:
+                inner_types = [ret.return_type]
+
+            for type_name in inner_types:
+                if type_name not in symbol_by_name:
+                    continue
+
+                # 1. Try to resolve to the same file
+                same_file_symbols = [s for s in symbol_by_name[type_name] if s.file_id == ret.file_id]
+                if same_file_symbols:
+                    for target_symbol in same_file_symbols:
+                        self._add_edge(
+                            func_symbol.id,
+                            target_symbol.id,
+                            SKGEdgeType.RETURNS,
+                            meta={"confidence": 0.9},
+                            evidence=f'Return Type Resolution ({type_name}): Same File Match',
+                        )
+                    continue
+
+                # 2. Try to resolve to imported files
+                imports = imported_files.get(ret.file_id, set())
+                imported_symbols = [s for s in symbol_by_name[type_name] if s.file_id in imports]
+                if imported_symbols:
+                    for target_symbol in imported_symbols:
+                        self._add_edge(
+                            func_symbol.id,
+                            target_symbol.id,
+                            SKGEdgeType.RETURNS,
+                            meta={"confidence": 0.8},
+                            evidence=f'Return Type Resolution ({type_name}): Imported File Match',
+                        )
+                    continue
+
+                # 3. Fallback to repo-wide matching
+                for target_symbol in symbol_by_name[type_name]:
                     self._add_edge(
                         func_symbol.id,
                         target_symbol.id,
                         SKGEdgeType.RETURNS,
-                        meta={"confidence": 0.9},
-                        evidence='Return Type Resolution: Same File Match',
+                        meta={"confidence": 0.5},
+                        evidence=f'Return Type Resolution ({type_name}): Repo-wide Fallback Match',
                     )
-                continue
-
-            # 2. Try to resolve to imported files
-            imports = imported_files.get(ret.file_id, set())
-            imported_symbols = [s for s in symbol_by_name[ret.return_type] if s.file_id in imports]
-            if imported_symbols:
-                for target_symbol in imported_symbols:
-                    self._add_edge(
-                        func_symbol.id,
-                        target_symbol.id,
-                        SKGEdgeType.RETURNS,
-                        meta={"confidence": 0.8},
-                        evidence='Return Type Resolution: Imported File Match',
-                    )
-                continue
-
-            # 3. Fallback to repo-wide matching
-            for target_symbol in symbol_by_name[ret.return_type]:
-                self._add_edge(
-                    func_symbol.id,
-                    target_symbol.id,
-                    SKGEdgeType.RETURNS,
-                    meta={"confidence": 0.5},
-                    evidence='Return Type Resolution: Repo-wide Fallback Match',
-                )
 
     async def commit_to_database(self):
         for e in self.edges:

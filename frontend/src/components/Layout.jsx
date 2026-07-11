@@ -12,7 +12,7 @@ const Layout = () => {
 
   return (
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden relative">
-      <Sidebar />
+      <Sidebar repositoryId={id} />
       <div className="flex flex-col flex-1 relative">
         <TopNavigation />
         <main className="flex-1 overflow-auto p-6 relative">

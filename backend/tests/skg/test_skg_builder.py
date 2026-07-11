@@ -60,3 +60,28 @@ async def test_skg_builder_imports():
     assert any(e.source_id == f1.id and e.target_id == i1.id and e.edge_type == SKGEdgeType.CONTAINS.value for e in edges)
     # Check IMPORTS edge
     assert any(e.source_id == f1.id and e.target_id == f2.id and e.edge_type == SKGEdgeType.IMPORTS.value for e in edges)
+
+from app.rim.domain.models import DomainReturn
+
+@pytest.mark.asyncio
+async def test_skg_builder_returns():
+    db = MockAsyncSession()
+    version_id = uuid.uuid4()
+    builder = SKGBuilder(db, version_id)
+    
+    d1 = DomainDirectory(id=uuid.uuid4(), repository_id=uuid.uuid4(), repository_version_id=version_id, path=".")
+    f1 = DomainFile(id=uuid.uuid4(), repository_id=d1.repository_id, repository_version_id=version_id, path="app.py", directory_id=d1.id, language="python")
+    
+    s_user = DomainSymbol(id=uuid.uuid4(), repository_id=d1.repository_id, repository_version_id=version_id, file_id=f1.id, name="User", fully_qualified_name="app.py::User", symbol_type="class")
+    s_func = DomainSymbol(id=uuid.uuid4(), repository_id=d1.repository_id, repository_version_id=version_id, file_id=f1.id, name="get_users", fully_qualified_name="app.py::get_users", symbol_type="function")
+    
+    ret1 = DomainReturn(id=uuid.uuid4(), repository_id=d1.repository_id, repository_version_id=version_id, file_id=f1.id, function_name="get_users", return_type="List[User]")
+    
+    builder.build_return_type_edges([ret1], [s_user, s_func])
+    
+    assert len(builder.edges) == 1
+    edge = builder.edges[0]
+    assert edge.source_id == s_func.id
+    assert edge.target_id == s_user.id
+    assert edge.edge_type == SKGEdgeType.RETURNS.value
+    assert "User" in edge.provenance["evidence"]
