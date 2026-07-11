@@ -8,7 +8,12 @@ from fastapi.testclient import TestClient
 
 from app.core.config import settings
 
-# Custom type decorator to represent vector columns as JSON text on SQLite
+# WARNING/NOTE on SQLite Test Shim:
+# We monkey-patch pgvector.sqlalchemy.Vector to SQLiteVector (which serializes as JSON/Text)
+# so that the test suite runs database-independently without requiring Docker/PostgreSQL.
+# However, this means SQLite cannot run real pgvector similarity operators like `.cosine_distance()`.
+# If you write tests executing vector similarity queries, they must be run against a real Postgres
+# service rather than this in-memory SQLite shim.
 from sqlalchemy import Text, TypeDecorator
 
 class SQLiteVector(TypeDecorator):

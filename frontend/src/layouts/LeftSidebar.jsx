@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { FolderGit2, Search, Settings, Loader2 } from 'lucide-react'
+import { FolderGit2, Search, Settings, Loader2, Home, Network, AlertTriangle } from 'lucide-react'
 import { api } from '../services/api'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import useStore from '../store'
 
 export function LeftSidebar() {
@@ -10,6 +10,8 @@ export function LeftSidebar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const navigate = useNavigate();
+  const { id } = useParams();
+  const location = useLocation();
   const setActiveEntity = useStore(state => state.setActiveEntity);
 
   useEffect(() => {
@@ -44,8 +46,46 @@ export function LeftSidebar() {
         <FolderGit2 className="w-6 h-6" />
         <span className="font-bold text-xl tracking-tight text-white">CodeAtlas</span>
       </div>
+
+      {id && (
+        <div className="mb-6 space-y-1">
+          <button
+            onClick={() => navigate(`/repo/${id}`)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              location.pathname === `/repo/${id}`
+                ? 'bg-primary/20 text-primary'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Home className="w-4 h-4" />
+            Dashboard
+          </button>
+          <button
+            onClick={() => navigate(`/repo/${id}/flow`)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              location.pathname.startsWith(`/repo/${id}/flow`)
+                ? 'bg-primary/20 text-primary'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Network className="w-4 h-4" />
+            Graph Explorer
+          </button>
+          <button
+            onClick={() => navigate(`/repo/${id}/analysis`)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              location.pathname.startsWith(`/repo/${id}/analysis`)
+                ? 'bg-primary/20 text-primary'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <AlertTriangle className="w-4 h-4" />
+            Analysis
+          </button>
+        </div>
+      )}
       
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
           <input 
@@ -94,7 +134,14 @@ export function LeftSidebar() {
         )}
       </div>
       
-      <div className="pt-4 border-t border-border mt-auto flex items-center gap-2 text-gray-400 hover:text-white cursor-pointer transition-colors">
+      <div 
+        onClick={() => navigate(id ? `/repo/${id}/settings` : '/settings')}
+        className={`pt-4 border-t border-border mt-auto flex items-center gap-2 cursor-pointer transition-colors ${
+          location.pathname.includes('/settings')
+            ? 'text-primary'
+            : 'text-gray-400 hover:text-white'
+        }`}
+      >
         <Settings className="w-4 h-4" />
         <span className="text-sm">Settings</span>
       </div>
