@@ -111,5 +111,21 @@ export const api = {
     const res = await fetch(`${BASE_URL}/repositories/${repoId}/docs${suffix}`);
     if (!res.ok) throw new Error('Failed to generate documentation draft');
     return res.json();
+  },
+
+  getSettings: async () => {
+    const res = await fetch(`${BASE_URL}/settings`);
+    if (!res.ok) throw new Error('Failed to fetch settings');
+    return res.json();
+  },
+
+  updateSettings: async (settings) => {
+    const res = await fetch(`${BASE_URL}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings)
+    });
+    if (!res.ok) throw new Error('Failed to update settings');
+    return res.json();
   }
 };

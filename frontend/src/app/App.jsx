@@ -8,6 +8,7 @@ import { ExecutionFlow } from '@/features/execution/ExecutionFlowPlayer'
 import Analysis from '@/pages/Analysis'
 import Settings from '@/pages/Settings'
 import NotFound from '@/pages/NotFound'
+import GraphExplorer from '@/pages/GraphExplorer'
 
 const queryClient = new QueryClient()
 
@@ -21,6 +22,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/repo/:id" element={<Dashboard />} />
             <Route path="/repo/:id/flow" element={<ExecutionFlow />} />
+            <Route path="/repo/:id/graph" element={<GraphExplorer />} />
             <Route path="/repo/:id/analysis" element={<Analysis />} />
             <Route path="/repo/:id/settings" element={<Settings />} />
             <Route path="/settings" element={<Settings />} />

@@ -107,7 +107,7 @@ export function Dashboard() {
             variants={itemVariants}
             whileHover={{ scale: 1.01 }}
             className="lg:col-span-2 bg-surface/50 backdrop-blur-xl border border-white/5 rounded-2xl p-8 h-[400px] flex items-center justify-center relative overflow-hidden group cursor-pointer shadow-2xl" 
-            onClick={() => navigate(`/repo/${repo.id}/flow`)}
+            onClick={() => navigate(`/repo/${repo.id}/graph`)}
           >
             <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] pointer-events-none" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FolderGit2, Search, Settings, Loader2, Home, Network, AlertTriangle } from 'lucide-react'
+import { FolderGit2, Search, Settings, Loader2, Home, Network, AlertTriangle, Cpu } from 'lucide-react'
 import { api } from '../services/api'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import useStore from '../store'
@@ -62,6 +62,17 @@ export function LeftSidebar() {
             Dashboard
           </button>
           <button
+            onClick={() => navigate(`/repo/${id}/graph`)}
+            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              location.pathname.startsWith(`/repo/${id}/graph`)
+                ? 'bg-primary/20 text-primary'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Network className="w-4 h-4" />
+            Graph Explorer
+          </button>
+          <button
             onClick={() => navigate(`/repo/${id}/flow`)}
             className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
               location.pathname.startsWith(`/repo/${id}/flow`)
@@ -69,8 +80,8 @@ export function LeftSidebar() {
                 : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            <Network className="w-4 h-4" />
-            Graph Explorer
+            <Cpu className="w-4 h-4" />
+            Execution Flow
           </button>
           <button
             onClick={() => navigate(`/repo/${id}/analysis`)}
