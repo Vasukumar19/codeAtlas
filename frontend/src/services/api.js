@@ -114,15 +114,22 @@ export const api = {
   },
 
   getSettings: async () => {
-    const res = await fetch(`${BASE_URL}/settings`);
+    const token = localStorage.getItem('codeatlas_admin_token') || '';
+    const res = await fetch(`${BASE_URL}/settings`, {
+      headers: { 'X-Admin-Token': token }
+    });
     if (!res.ok) throw new Error('Failed to fetch settings');
     return res.json();
   },
 
   updateSettings: async (settings) => {
+    const token = localStorage.getItem('codeatlas_admin_token') || '';
     const res = await fetch(`${BASE_URL}/settings`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-Admin-Token': token
+      },
       body: JSON.stringify(settings)
     });
     if (!res.ok) throw new Error('Failed to update settings');

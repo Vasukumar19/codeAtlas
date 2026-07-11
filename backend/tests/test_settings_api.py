@@ -1,4 +1,5 @@
 import pytest
+import os
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.api.deps import get_db
@@ -14,23 +15,43 @@ async def client(db_session):
     app.dependency_overrides.clear()
 
 @pytest.mark.asyncio
-async def test_get_settings(client: AsyncClient):
+async def test_get_settings_masked(client: AsyncClient):
     response = await client.get("/api/v1/settings")
     assert response.status_code == 200
     data = response.json()
-    assert "embedding_provider" in data
-    assert "gemini_api_key" in data
+    assert data["embedding_provider"] == "OpenAI"
+    # Secrets must be masked or empty, never raw plaintext
+    assert data["gemini_api_key"] in ["", "••••••••"]
+    assert data["github_token"] in ["", "••••••••"]
 
 @pytest.mark.asyncio
-async def test_update_settings(client: AsyncClient):
+async def test_update_settings_validation(client: AsyncClient):
     payload = {
         "embedding_provider": "Gemini",
         "github_token": "test-token",
-        "gemini_api_key": "test-key",
+        "gemini_api_key": "test-key\ninjection_line=foo", # Has newline to trigger validation fail
         "openai_api_key": "test-openai"
     }
-    # Mock the builtins.open only during the post call to settings to avoid writing to local workspace .env
-    with patch("builtins.open", mock_open(read_data="DATABASE_URL=mock_url\n")):
+    with patch("builtins.open", mock_open()):
         response = await client.post("/api/v1/settings", json=payload)
-        assert response.status_code == 200
-        assert response.json() == {"status": "success"}
+        # Should reject with HTTP 400 Bad Request
+        assert response.status_code == 400
+        assert "Invalid characters" in response.json()["message"]
+
+@pytest.mark.asyncio
+async def test_admin_token_auth(client: AsyncClient):
+    # Set an ADMIN_API_TOKEN env variable to test authentication check
+    with patch.dict(os.environ, {"ADMIN_API_TOKEN": "secret-admin-pass"}):
+        # 1. Unauthenticated request should return 401
+        response = await client.get("/api/v1/settings")
+        assert response.status_code == 401
+        
+        # 2. Authenticated request with correct header should succeed
+        headers = {"X-Admin-Token": "secret-admin-pass"}
+        response2 = await client.get("/api/v1/settings", headers=headers)
+        assert response2.status_code == 200
+        
+        # 3. Authenticated request with wrong token should fail
+        headers_wrong = {"X-Admin-Token": "wrong-pass"}
+        response3 = await client.get("/api/v1/settings", headers=headers_wrong)
+        assert response3.status_code == 401
