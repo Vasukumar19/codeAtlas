@@ -10,8 +10,10 @@ from app.core.events import event_bus
 from app.core.logger import get_logger
 from app.enrichment.pipeline import KnowledgePipeline
 from app.models import ParsingReport, RepositoryVersion
+from app.models.enrichment.node import KnowledgeNodeModel
 from app.models.enums import RepositoryStatus
 from app.models.rim.models import (
+    RIMCallModel,
     RIMDirectoryModel,
     RIMFileModel,
     RIMImportModel,
@@ -23,6 +25,7 @@ from app.parser.detector import LanguageDetector
 from app.parser.models import ParseResult
 from app.parser.registry import ParserRegistry
 from app.rim.domain.models import (
+    DomainCall,
     DomainDirectory,
     DomainFile,
     DomainImport,
@@ -124,13 +127,12 @@ class ParsingOrchestrator:
         routes = (await self.db.execute(select(RIMRouteModel).filter_by(repository_version_id=version.id))).scalars().all()
         calls = (await self.db.execute(select(RIMCallModel).filter_by(repository_version_id=version.id))).scalars().all()
 
-        from app.rim.domain.models import DomainDirectory, DomainFile, DomainSymbol, DomainImport, DomainRoute, DomainCall
         domain_dirs = [DomainDirectory(id=d.id, repository_id=d.repository_id, repository_version_id=d.repository_version_id, path=d.path, parent_id=d.parent_id) for d in dirs]
         domain_files = [DomainFile(id=f.id, repository_id=f.repository_id, repository_version_id=f.repository_version_id, path=f.path, directory_id=f.directory_id, language=f.language) for f in files]
         domain_symbols = [DomainSymbol(id=s.id, repository_id=s.repository_id, repository_version_id=s.repository_version_id, file_id=s.file_id, name=s.name, fully_qualified_name=s.fully_qualified_name, symbol_type=s.symbol_type, parent_symbol_id=s.parent_symbol_id) for s in symbols]
         domain_imports = [DomainImport(id=i.id, repository_id=i.repository_id, repository_version_id=i.repository_version_id, file_id=i.file_id, raw_statement=i.raw_statement) for i in imports]
         domain_routes = [DomainRoute(id=r.id, repository_id=r.repository_id, repository_version_id=r.repository_version_id, file_id=r.file_id, method=r.method, path=r.path, handler=r.handler) for r in routes]
-        domain_calls = [DomainCall(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver) for c in calls]
+        domain_calls = [DomainCall(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver, caller_function_name=c.caller_function_name, byte_offset=c.byte_offset) for c in calls]
 
         # 2. Build SKG
         builder = SKGBuilder(self.db, version.id)
@@ -150,6 +152,21 @@ class ParsingOrchestrator:
             node = await pipeline.execute(f, "File", builder.edges, None)
             if node:
                 knowledge_nodes.append(node)
+                self.db.add(KnowledgeNodeModel(
+                    id=node.identity.id,
+                    repository_id=node.identity.repository_id,
+                    repository_version_id=node.identity.repository_version_id,
+                    rim_entity_id=node.identity.rim_entity_id,
+                    skg_node_id=node.identity.skg_node_id,
+                    entity_type=node.identity.entity_type,
+                    semantics=node.semantics.model_dump(mode="json"),
+                    metrics=node.metrics.model_dump(mode="json"),
+                    documentation=node.documentation.model_dump(mode="json"),
+                    relationships=node.relationships.model_dump(mode="json"),
+                    metadata_=node.metadata.model_dump(mode="json"),
+                    provenance={key: value.model_dump(mode="json") for key, value in node.provenance.items()},
+                ))
+        await self.db.commit()
 
         # 4. Embeddings
         if knowledge_nodes:
@@ -250,4 +267,17 @@ class ParsingOrchestrator:
                     method=route.get("method", "GET"),
                     path=route.get("path", "/"),
                     handler=route.get("handler", "unknown")
+                ))
+
+        # Insert raw call references so SKG can resolve CALLS edges later.
+        for call in parse_result.calls:
+            if call["file"] in file_map:
+                self.db.add(RIMCallModel(
+                    repository_id=version.repository_id,
+                    repository_version_id=version.id,
+                    file_id=file_map[call["file"]],
+                    function_name=call.get("function", "unknown"),
+                    receiver=call.get("receiver"),
+                    caller_function_name=call.get("caller_function_name"),
+                    byte_offset=call.get("byte_offset"),
                 ))

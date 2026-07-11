@@ -50,3 +50,5 @@ class DomainCall(DomainEntity):
     file_id: uuid.UUID
     function_name: str
     receiver: str | None = None
+    caller_function_name: str | None = None
+    byte_offset: int | None = None

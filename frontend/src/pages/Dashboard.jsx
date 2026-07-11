@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Activity, ShieldAlert, Zap, BookOpen, Layers, Loader2, Sparkles, ChevronRight, Code2 } from 'lucide-react'
+import { Activity, ShieldAlert, Zap, BookOpen, Layers, Loader2, Sparkles, ChevronRight, Code2, Route, FileWarning } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { api } from '../services/api'
 import useStore from '../store'
@@ -169,8 +169,47 @@ export function Dashboard() {
             </div>
           </motion.div>
         </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <ActionCard
+            variants={itemVariants}
+            title="Execution Flow"
+            description="Trace route and function calls using resolved CALLS edges."
+            icon={Route}
+            onClick={() => navigate(`/repo/${repo.id}/flow`)}
+          />
+          <ActionCard
+            variants={itemVariants}
+            title="Impact & Security"
+            description="Inspect blast radius and concrete static findings."
+            icon={FileWarning}
+            onClick={() => navigate(`/repo/${repo.id}/analysis`)}
+          />
+          <ActionCard
+            variants={itemVariants}
+            title="Documentation Draft"
+            description="Generate a module README from parsed structure and enrichment."
+            icon={BookOpen}
+            onClick={() => navigate(`/repo/${repo.id}/analysis`)}
+          />
+        </div>
       </motion.div>
     </div>
+  )
+}
+
+function ActionCard({ title, description, icon: Icon, onClick, variants }) {
+  return (
+    <motion.button
+      variants={variants}
+      whileHover={{ y: -3 }}
+      onClick={onClick}
+      className="text-left bg-surface/50 border border-white/5 rounded-lg p-5 hover:border-primary/40 hover:bg-white/[0.04] transition-colors"
+    >
+      <Icon className="w-5 h-5 text-primary mb-4" />
+      <div className="font-bold text-white mb-2">{title}</div>
+      <p className="text-sm text-gray-400 leading-relaxed">{description}</p>
+    </motion.button>
   )
 }
 

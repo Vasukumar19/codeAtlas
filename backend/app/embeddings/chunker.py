@@ -7,7 +7,7 @@ from app.enrichment.domain.schemas import KnowledgeNode
 class ChunkValidator:
     ALLOWED_ENTITY_TYPES = {
         "Repository", "Directory", "Module", "Package", 
-        "Class", "Interface", "Function", "Method", "Route", "Documentation"
+        "File", "Class", "Interface", "Function", "Method", "Route", "Documentation"
     }
     
     @staticmethod

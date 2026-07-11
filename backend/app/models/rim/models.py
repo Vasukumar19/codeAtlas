@@ -21,7 +21,7 @@ class RIMFileModel(Base, UUIDMixin, TimestampMixin):
     directory_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rim_directories.id"))
     path: Mapped[str] = mapped_column(String)
     language: Mapped[str] = mapped_column(String)
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(768))
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
 
 class RIMSymbolModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "rim_symbols"
@@ -32,7 +32,7 @@ class RIMSymbolModel(Base, UUIDMixin, TimestampMixin):
     fully_qualified_name: Mapped[str] = mapped_column(String)
     symbol_type: Mapped[str] = mapped_column(String)
     parent_symbol_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("rim_symbols.id"))
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(768))
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536))
 
 class RIMImportModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "rim_imports"
@@ -57,3 +57,5 @@ class RIMCallModel(Base, UUIDMixin, TimestampMixin):
     file_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rim_files.id"))
     function_name: Mapped[str] = mapped_column(String)
     receiver: Mapped[str | None] = mapped_column(String, nullable=True)
+    caller_function_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    byte_offset: Mapped[int | None] = mapped_column(nullable=True)

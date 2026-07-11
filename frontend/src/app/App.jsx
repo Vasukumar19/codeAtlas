@@ -5,6 +5,7 @@ import { Landing } from '@/pages/Landing'
 import { Dashboard } from '@/pages/Dashboard'
 import { ImportPipeline } from '@/pages/ImportPipeline'
 import { ExecutionFlow } from '@/features/execution/ExecutionFlowPlayer'
+import Analysis from '@/pages/Analysis'
 
 const queryClient = new QueryClient()
 
@@ -18,6 +19,7 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/repo/:id" element={<Dashboard />} />
             <Route path="/repo/:id/flow" element={<ExecutionFlow />} />
+            <Route path="/repo/:id/analysis" element={<Analysis />} />
           </Route>
         </Routes>
       </BrowserRouter>

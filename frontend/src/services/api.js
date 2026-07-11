@@ -73,5 +73,31 @@ export const api = {
     const res = await fetch(`${BASE_URL}/repositories/${repoId}/hot-files`);
     if (!res.ok) throw new Error('Failed to fetch hot files');
     return res.json();
+  },
+
+  getImpactAnalysis: async (repoId, entityId, hops = 3) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/impact/${entityId}?hops=${hops}`);
+    if (!res.ok) throw new Error('Failed to fetch impact analysis');
+    return res.json();
+  },
+
+  getExecutionFlow: async (repoId, entityId) => {
+    const suffix = entityId ? `?entity_id=${entityId}` : '';
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/execution-flow${suffix}`);
+    if (!res.ok) throw new Error('Failed to fetch execution flow');
+    return res.json();
+  },
+
+  getSecurityFindings: async (repoId) => {
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/security-findings`);
+    if (!res.ok) throw new Error('Failed to fetch security findings');
+    return res.json();
+  },
+
+  generateDocs: async (repoId, path) => {
+    const suffix = path ? `?path=${encodeURIComponent(path)}` : '';
+    const res = await fetch(`${BASE_URL}/repositories/${repoId}/docs${suffix}`);
+    if (!res.ok) throw new Error('Failed to generate documentation draft');
+    return res.json();
   }
 };

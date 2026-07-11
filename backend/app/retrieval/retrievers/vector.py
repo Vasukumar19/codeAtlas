@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.intelligence.models.registry import ModelRegistry
 from app.models.embeddings.metadata import EmbeddingMetadataModel
 from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQuery
@@ -8,7 +9,7 @@ from app.retrieval.retrievers.base import BaseRetriever, RetrievalResult, UserQu
 
 class VectorRetriever(BaseRetriever):
     async def retrieve(self, query: UserQuery, db: AsyncSession) -> list[RetrievalResult]:
-        provider = ModelRegistry.get("OpenAI")
+        provider = ModelRegistry.get(settings.embedding_provider)
         if not provider:
             return []
             

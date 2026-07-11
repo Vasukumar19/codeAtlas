@@ -20,14 +20,14 @@ export function ExecutionFlow() {
     const loadGraph = async () => {
       setLoading(true);
       try {
-        const data = await api.getGraph(id);
+        const data = await api.getExecutionFlow(id);
         
-        const cols = Math.ceil(Math.sqrt(data.nodes.length || 1));
+        const cols = Math.ceil(Math.sqrt(data.steps.length || 1));
         const spacing = 200;
         
-        const formattedNodes = data.nodes.map((n, i) => ({
+        const formattedNodes = data.steps.map((n, i) => ({
           id: n.id,
-          data: { label: n.label, ...n.data },
+          data: { label: n.name, ...n },
           position: { 
             x: (i % cols) * spacing, 
             y: Math.floor(i / cols) * spacing 
@@ -48,7 +48,7 @@ export function ExecutionFlow() {
           id: e.id,
           source: e.source,
           target: e.target,
-          label: e.label,
+          label: e.type,
           markerEnd: {
             type: MarkerType.ArrowClosed,
             color: '#9ca3af',

@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     repository_storage_path: Path = Path(".data/repositories")
     github_api_url: str = "https://api.github.com"
     github_token: str | None = None
+    embedding_provider: str = "OpenAI"
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     model_config = SettingsConfigDict(

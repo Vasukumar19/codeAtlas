@@ -105,7 +105,8 @@ class RIMBuilderPipeline:
             call_id = uuid.uuid4() # We can use a random UUID since calls are transient edges often
             self.calls.append(DomainCall(
                 id=call_id, repository_id=self.repo_id, repository_version_id=self.version_id,
-                file_id=file_id, function_name=call["function"], receiver=call.get("receiver")
+                file_id=file_id, function_name=call["function"], receiver=call.get("receiver"),
+                caller_function_name=call.get("caller_function_name"), byte_offset=call.get("byte_offset")
             ))
             
         # 4. Relationship Resolution
@@ -130,6 +131,10 @@ class RIMBuilderPipeline:
             self.db.add(RIMRouteModel(id=r.id, repository_id=r.repository_id, repository_version_id=r.repository_version_id, file_id=r.file_id, method=r.method, path=r.path, handler=r.handler))
             
         for c in self.calls:
-            self.db.add(RIMCallModel(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver))
+            self.db.add(RIMCallModel(
+                id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, 
+                file_id=c.file_id, function_name=c.function_name, receiver=c.receiver,
+                caller_function_name=c.caller_function_name, byte_offset=c.byte_offset
+            ))
             
         await self.db.commit()

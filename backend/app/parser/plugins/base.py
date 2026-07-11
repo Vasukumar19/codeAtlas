@@ -66,14 +66,29 @@ class ParserPlugin(ABC):
             cursor = QueryCursor(q_calls)
             for _, match in cursor.matches(tree.root_node):
                 call_data = {"file": filepath}
+                call_node = None
                 for cap_name, nodes in match.items():
                     for node in nodes:
                         text = content_bytes[node.start_byte:node.end_byte].decode("utf8")
                         if cap_name == "call.function":
                             call_data["function"] = text
+                            call_node = node
                         elif cap_name == "call.receiver":
                             call_data["receiver"] = text
-                if "function" in call_data:
+                if "function" in call_data and call_node:
+                    call_data["byte_offset"] = call_node.start_byte
+                    # Walk up the AST to find enclosing function
+                    curr = call_node.parent
+                    while curr:
+                        if curr.type in ["function_definition", "method_declaration", "method_definition", "arrow_function", "function_declaration", "function", "class_declaration"]:
+                            # Attempt to find identifier child
+                            for child in curr.children:
+                                if child.type == "identifier":
+                                    call_data["caller_function_name"] = content_bytes[child.start_byte:child.end_byte].decode("utf8")
+                                    break
+                            if "caller_function_name" in call_data:
+                                break
+                        curr = curr.parent
                     features["calls"].append(call_data)
                     
         return features

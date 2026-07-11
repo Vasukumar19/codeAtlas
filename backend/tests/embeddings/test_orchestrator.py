@@ -1,8 +1,6 @@
 import pytest
 import uuid
 from app.embeddings.orchestrator import EmbeddingOrchestrator
-from app.embeddings.providers.sentence_transformer import SentenceTransformerProvider
-from app.embeddings.store.memory_store import MemoryVectorStore
 from app.enrichment.domain.schemas import KnowledgeNode, KnowledgeIdentity, KnowledgeSemantics, KnowledgeMetadata, KnowledgeRelationships
 from typing import List
 

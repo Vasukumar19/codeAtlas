@@ -17,7 +17,7 @@ class EmbeddingMetadataModel(Base, UUIDMixin, TimestampMixin):
     knowledge_version_id: Mapped[str] = mapped_column(String, index=True)
     
     chunk_hash: Mapped[str] = mapped_column(String, index=True)
-    vector: Mapped[list[float]] = mapped_column(Vector(768))
+    vector: Mapped[list[float]] = mapped_column(Vector(1536))
     
     structured_metadata: Mapped[dict] = mapped_column(JSON, default=dict)
     provenance: Mapped[dict] = mapped_column(JSON, default=dict)

@@ -3,9 +3,9 @@ from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.embeddings.cache import EmbeddingCache
 from app.embeddings.chunker import ChunkBuilder
-from app.embeddings.providers.base import EmbeddingProvider
 from app.enrichment.domain.schemas import KnowledgeNode
 from app.models.embeddings.metadata import EmbeddingMetadataModel
 
@@ -14,10 +14,16 @@ class EmbeddingOrchestrator:
     def __init__(self, db: AsyncSession, collection_id: uuid.UUID):
         self.db = db
         from app.intelligence.models.registry import ModelRegistry
-        self.provider = ModelRegistry.get("OpenAI")
+        self.provider = ModelRegistry.get(settings.embedding_provider)
         if not self.provider:
-            from app.intelligence.models.openai import OpenAIProvider
-            self.provider = OpenAIProvider()
+            if settings.embedding_provider == "Gemini":
+                from app.intelligence.models.gemini import GeminiProvider
+
+                self.provider = GeminiProvider()
+            else:
+                from app.intelligence.models.openai import OpenAIProvider
+
+                self.provider = OpenAIProvider()
         self.collection_id = collection_id
         self.cache = EmbeddingCache(db)
         self.engine_version = "v1.0"

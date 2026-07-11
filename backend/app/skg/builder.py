@@ -5,12 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.enums import SKGEdgeType
 from app.models.skg.edge import SKGEdgeModel
 from app.rim.domain.models import (
+    DomainCall,
     DomainDirectory,
     DomainFile,
     DomainImport,
     DomainRoute,
     DomainSymbol,
-    DomainCall,
 )
 
 
@@ -101,20 +101,68 @@ class SKGBuilder:
                         break
 
     def build_call_edges(self, calls: list[DomainCall], symbols: list[DomainSymbol]):
-        symbol_map = {}
+        symbol_by_file_and_name = {}
+        symbol_by_name = {}
         for s in symbols:
-            # We index symbols by name. A robust solution would also account for receiver and scoping.
-            if s.name not in symbol_map:
-                symbol_map[s.name] = []
-            symbol_map[s.name].append(s)
+            symbol_by_file_and_name[(s.file_id, s.name)] = s
+            if s.name not in symbol_by_name:
+                symbol_by_name[s.name] = []
+            symbol_by_name[s.name].append(s)
+
+        # Get imported files for each file from self.edges (which has IMPORTS edges)
+        imported_files = {}
+        for edge in self.edges:
+            if edge.edge_type == SKGEdgeType.IMPORTS.value:
+                if edge.source_id not in imported_files:
+                    imported_files[edge.source_id] = set()
+                imported_files[edge.source_id].add(edge.target_id)
             
         for c in calls:
-            # For each call, try to resolve to a symbol
-            if c.function_name in symbol_map:
-                for target_symbol in symbol_map[c.function_name]:
-                    self._add_edge(c.file_id, target_symbol.id, SKGEdgeType.CALLS, evidence='Heuristic Call Resolution')
-                    # If this call is inside a function, we'd ideally link Function -> Function. 
-                    # For now, File -> Function is a baseline for CALLS heuristics.
+            if c.function_name not in symbol_by_name:
+                continue
+
+            source_id = c.file_id
+            if c.caller_function_name:
+                caller_symbol = symbol_by_file_and_name.get((c.file_id, c.caller_function_name))
+                if caller_symbol:
+                    source_id = caller_symbol.id
+
+            # 1. Try to resolve to the same file
+            same_file_symbols = [s for s in symbol_by_name[c.function_name] if s.file_id == c.file_id]
+            if same_file_symbols:
+                for target_symbol in same_file_symbols:
+                    self._add_edge(
+                        source_id,
+                        target_symbol.id,
+                        SKGEdgeType.CALLS,
+                        meta={"confidence": 0.9},
+                        evidence='Call Resolution: Same File Match',
+                    )
+                continue
+
+            # 2. Try to resolve to imported files
+            imports = imported_files.get(c.file_id, set())
+            imported_symbols = [s for s in symbol_by_name[c.function_name] if s.file_id in imports]
+            if imported_symbols:
+                for target_symbol in imported_symbols:
+                    self._add_edge(
+                        source_id,
+                        target_symbol.id,
+                        SKGEdgeType.CALLS,
+                        meta={"confidence": 0.8},
+                        evidence='Call Resolution: Imported File Match',
+                    )
+                continue
+
+            # 3. Fallback to repo-wide matching
+            for target_symbol in symbol_by_name[c.function_name]:
+                self._add_edge(
+                    source_id,
+                    target_symbol.id,
+                    SKGEdgeType.CALLS,
+                    meta={"confidence": 0.5},
+                    evidence='Call Resolution: Repo-wide Fallback Match',
+                )
 
     def build_advanced_edges(self, symbols: list[DomainSymbol]):
         # Placeholder for EXTENDS, IMPLEMENTS, RETURNS, DEPENDS_ON, REFERENCES
