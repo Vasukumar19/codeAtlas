@@ -1,11 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { AlertTriangle, BookOpen, Loader2, Network, ShieldAlert } from 'lucide-react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { AlertTriangle, BookOpen, Loader2, Network, ShieldAlert, Copy, Download, RefreshCw } from 'lucide-react'
 import { api } from '../services/api'
 
 const Analysis = () => {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Parse query parameters for deep-linked entity
+  const queryParams = useMemo(() => new URLSearchParams(location.search), [location.search])
+  const queryEntityId = queryParams.get('entity')
   
   const [graph, setGraph] = useState(null)
   const [security, setSecurity] = useState([])
@@ -13,10 +18,16 @@ const Analysis = () => {
   const [impact, setImpact] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Picker lists
+  // Picker/configuration states
   const [repositories, setRepositories] = useState([])
   const [selectedRepoId, setSelectedRepoId] = useState(id || '')
-  const [selectedEntityId, setSelectedEntityId] = useState('')
+  const [selectedEntityId, setSelectedEntityId] = useState(queryEntityId || '')
+  
+  // Scoped documentation draft states
+  const [docsPath, setDocsPath] = useState('')
+  const [generatingDocs, setGeneratingDocs] = useState(false)
+  const [editedMarkdown, setEditedMarkdown] = useState('')
+  const [copiedDocs, setCopiedDocs] = useState(false)
 
   // Load repositories if no id is active in params
   useEffect(() => {
@@ -32,7 +43,7 @@ const Analysis = () => {
     }
   }, [id])
 
-  // Load analysis data when id changes
+  // Load main analysis data when id changes
   useEffect(() => {
     if (!id) return
     const load = async () => {
@@ -41,17 +52,18 @@ const Analysis = () => {
         const [graphData, findings, docsDraft] = await Promise.all([
           api.getGraph(id),
           api.getSecurityFindings(id),
-          api.generateDocs(id),
+          api.generateDocs(id, docsPath || null),
         ])
         setGraph(graphData)
         setSecurity(findings)
         setDocs(docsDraft)
+        setEditedMarkdown(docsDraft?.markdown || '')
         
-        // Default to first interactive node for initial impact rendering
-        const firstNode = graphData.nodes?.find((node) => node.type === 'route' || node.type === 'symbol' || node.type === 'file')
-        if (firstNode) {
-          setSelectedEntityId(firstNode.id)
-          setImpact(await api.getImpactAnalysis(id, firstNode.id))
+        // Use deep-linked entity from search params or default to first interactable node
+        const targetEntity = queryEntityId || graphData.nodes?.find((node) => node.type === 'route' || node.type === 'symbol' || node.type === 'file')?.id
+        if (targetEntity) {
+          setSelectedEntityId(targetEntity)
+          setImpact(await api.getImpactAnalysis(id, targetEntity))
         } else {
           setSelectedEntityId('')
           setImpact(null)
@@ -65,6 +77,13 @@ const Analysis = () => {
     load()
   }, [id])
 
+  // Listen to deep-linked entity parameter changes
+  useEffect(() => {
+    if (!id || !queryEntityId) return
+    setSelectedEntityId(queryEntityId)
+    api.getImpactAnalysis(id, queryEntityId).then(setImpact).catch(console.error)
+  }, [queryEntityId, id])
+
   const graphSummary = useMemo(() => {
     if (!graph) return { nodes: 0, calls: 0, routes: 0 }
     return {
@@ -72,6 +91,12 @@ const Analysis = () => {
       calls: graph.edges?.filter((edge) => edge.label === 'CALLS').length || 0,
       routes: graph.nodes?.filter((node) => node.type === 'route').length || 0,
     }
+  }, [graph])
+
+  // Extract directory nodes for documentation path scoping
+  const directories = useMemo(() => {
+    if (!graph || !graph.nodes) return []
+    return graph.nodes.filter(n => n.type === 'directory').map(n => n.name || n.label || n.id)
   }, [graph])
 
   const handleRepoChange = (repoId) => {
@@ -94,6 +119,38 @@ const Analysis = () => {
     } else {
       setImpact(null)
     }
+  }
+
+  const handleDocsPathChange = async (path) => {
+    setDocsPath(path)
+    setGeneratingDocs(true)
+    try {
+      const docsDraft = await api.generateDocs(id, path || null)
+      setDocs(docsDraft)
+      setEditedMarkdown(docsDraft?.markdown || '')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setGeneratingDocs(false)
+    }
+  }
+
+  const handleCopyDocs = () => {
+    navigator.clipboard.writeText(editedMarkdown)
+    setCopiedDocs(true)
+    setTimeout(() => setCopiedDocs(false), 2000)
+  }
+
+  const handleExportDocs = () => {
+    const blob = new Blob([editedMarkdown], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${docsPath ? docsPath.replace(/[\/\\:]/g, '_') : 'repository'}_documentation.md`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
   }
 
   if (!id) {
@@ -159,6 +216,7 @@ const Analysis = () => {
           <MetricCard icon={ShieldAlert} label="Findings" value={security.length} />
         </div>
 
+        {/* Impact Analysis Section */}
         <section className="bg-surface border border-border rounded-lg p-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-2">
@@ -206,6 +264,7 @@ const Analysis = () => {
           )}
         </section>
 
+        {/* Security Findings Section */}
         <section className="bg-surface border border-border rounded-lg p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-yellow-400" />
@@ -226,12 +285,73 @@ const Analysis = () => {
           </div>
         </section>
 
+        {/* Documentation Section */}
         <section className="bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <BookOpen className="w-5 h-5 text-primary" />
-            <h2 className="font-bold text-white">Documentation Draft</h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              <h2 className="font-bold text-white">Documentation Draft</h2>
+            </div>
+            {directories.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400 font-semibold uppercase tracking-wide">Scope Path:</span>
+                <select
+                  value={docsPath}
+                  onChange={(e) => handleDocsPathChange(e.target.value)}
+                  className="bg-background border border-border rounded px-2.5 py-1 text-xs text-gray-300 focus:outline-none focus:border-primary font-mono max-w-xs"
+                >
+                  <option value="">Whole Repository</option>
+                  {directories.map(dir => (
+                    <option key={dir} value={dir}>{dir}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
-          <pre className="bg-background border border-border rounded-lg p-4 text-sm text-gray-300 whitespace-pre-wrap overflow-x-auto">{docs?.markdown || 'No documentation draft available.'}</pre>
+
+          <div className="space-y-2 relative">
+            <div className="flex justify-between items-center bg-background border border-border border-b-0 rounded-t-lg px-4 py-2">
+              <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Markdown Draft Editor</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleDocsPathChange(docsPath)}
+                  disabled={generatingDocs}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-surface border border-border hover:bg-white/5 hover:text-white rounded text-[11px] transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3 h-3 ${generatingDocs ? 'animate-spin' : ''}`} />
+                  Regenerate
+                </button>
+                <button
+                  onClick={handleCopyDocs}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-surface border border-border hover:bg-white/5 hover:text-white rounded text-[11px] transition-colors"
+                >
+                  <Copy className="w-3 h-3" />
+                  {copiedDocs ? 'Copied!' : 'Copy'}
+                </button>
+                <button
+                  onClick={handleExportDocs}
+                  className="flex items-center gap-1.5 px-3 py-1 bg-surface border border-border hover:bg-white/5 hover:text-white rounded text-[11px] transition-colors"
+                >
+                  <Download className="w-3 h-3" />
+                  Export
+                </button>
+              </div>
+            </div>
+            
+            <div className="relative">
+              {generatingDocs && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm flex items-center justify-center rounded-b-lg">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              )}
+              <textarea
+                value={editedMarkdown}
+                onChange={(e) => setEditedMarkdown(e.target.value)}
+                className="w-full h-80 bg-background border border-border border-t-0 rounded-b-lg p-4 text-sm text-gray-300 font-mono focus:outline-none focus:border-primary resize-y"
+                placeholder="No documentation draft available."
+              />
+            </div>
+          </div>
         </section>
       </div>
     </div>

@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Brain, FileCode, CheckCircle2, Loader2, Info } from 'lucide-react';
 import useStore from '../store';
 import { api } from '../services/api';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 
 export function RightInspector() {
   const params = useParams();
+  const navigate = useNavigate();
   const [id, setId] = useState(params.id);
   const activeEntity = useStore(state => state.activeEntity);
   const setViewingFile = useStore(state => state.setViewingFile);
@@ -106,18 +107,28 @@ export function RightInspector() {
                 </span>
               </div>
               {(entityDetails.type === 'file' || entityDetails.type === 'symbol') && (
-                <button 
-                  onClick={() => {
-                    const viewingEntity = {
-                      id: entityDetails.type === 'symbol' ? entityDetails.file_id : entityDetails.id,
-                      name: entityDetails.name
-                    };
-                    setViewingFile(viewingEntity);
-                  }}
-                  className="mt-4 w-full px-3 py-1.5 bg-primary/20 text-primary border border-primary/30 rounded text-xs font-semibold hover:bg-primary hover:text-white transition-colors"
-                >
-                  View Source Code
-                </button>
+                <div className="space-y-2 mt-4">
+                  <button 
+                    onClick={() => {
+                      const viewingEntity = {
+                        id: entityDetails.type === 'symbol' ? entityDetails.file_id : entityDetails.id,
+                        name: entityDetails.name
+                      };
+                      setViewingFile(viewingEntity);
+                    }}
+                    className="w-full px-3 py-1.5 bg-primary/20 text-primary border border-primary/30 rounded text-xs font-semibold hover:bg-primary hover:text-white transition-colors"
+                  >
+                    View Source Code
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigate(`/repo/${id}/analysis?entity=${entityDetails.id}`);
+                    }}
+                    className="w-full px-3 py-1.5 bg-accent/20 text-accent border border-accent/30 rounded text-xs font-semibold hover:bg-accent hover:text-white transition-colors"
+                  >
+                    Run Impact Analysis
+                  </button>
+                </div>
               )}
             </div>
           </div>
