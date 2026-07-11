@@ -3,6 +3,7 @@ import os
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.api.deps import get_db
+from app.core.config import settings
 from unittest.mock import patch, mock_open
 
 @pytest.fixture
@@ -16,7 +17,9 @@ async def client(db_session):
 
 @pytest.mark.asyncio
 async def test_get_settings_masked(client: AsyncClient):
-    response = await client.get("/api/v1/settings")
+    token = settings.admin_api_token
+    headers = {"X-Admin-Token": token}
+    response = await client.get("/api/v1/settings", headers=headers)
     assert response.status_code == 200
     data = response.json()
     assert data["embedding_provider"] == "OpenAI"
@@ -26,6 +29,8 @@ async def test_get_settings_masked(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_update_settings_validation(client: AsyncClient):
+    token = settings.admin_api_token
+    headers = {"X-Admin-Token": token}
     payload = {
         "embedding_provider": "Gemini",
         "github_token": "test-token",
@@ -33,7 +38,7 @@ async def test_update_settings_validation(client: AsyncClient):
         "openai_api_key": "test-openai"
     }
     with patch("builtins.open", mock_open()):
-        response = await client.post("/api/v1/settings", json=payload)
+        response = await client.post("/api/v1/settings", json=payload, headers=headers)
         # Should reject with HTTP 400 Bad Request
         assert response.status_code == 400
         assert "Invalid characters" in response.json()["message"]

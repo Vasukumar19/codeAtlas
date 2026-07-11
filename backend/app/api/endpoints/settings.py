@@ -1,4 +1,5 @@
 import os
+import secrets
 from pathlib import Path
 from fastapi import APIRouter, Header, HTTPException, status, Depends
 from pydantic import BaseModel
@@ -6,15 +7,14 @@ from app.core.config import settings
 
 router = APIRouter()
 
-# Optional admin token dependency for securing local configuration settings
+# Strict admin token dependency for securing configuration settings (constant-time check)
 async def verify_admin_token(x_admin_token: str | None = Header(None, alias="X-Admin-Token")):
     expected = os.getenv("ADMIN_API_TOKEN")
-    if expected:
-        if not x_admin_token or x_admin_token != expected:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Unauthorized settings access"
-            )
+    if not expected or not x_admin_token or not secrets.compare_digest(x_admin_token, expected):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized settings access"
+        )
 
 class SettingsSchema(BaseModel):
     embedding_provider: str

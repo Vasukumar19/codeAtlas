@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     github_api_url: str = "https://api.github.com"
     github_token: str | None = None
     embedding_provider: str = "OpenAI"
+    admin_api_token: str | None = None
     cors_origins: list[str] = ["http://localhost:5173", "http://127.0.0.1:5173"]
 
     model_config = SettingsConfigDict(
@@ -40,5 +41,26 @@ class Settings(BaseSettings):
             f"{self.postgres_server}:{self.postgres_port}/{self.postgres_db}"
         )
 
+
+# Generate default ADMIN_API_TOKEN if not present in environment or .env
+import os
+import secrets
+env_path = Path(__file__).resolve().parents[3] / ".env"
+if not os.getenv("ADMIN_API_TOKEN"):
+    token = secrets.token_hex(16)
+    lines = []
+    if env_path.exists():
+        with open(env_path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    has_token_line = False
+    for line in lines:
+        if line.strip().startswith("ADMIN_API_TOKEN="):
+            has_token_line = True
+            break
+    if not has_token_line:
+        lines.append(f"ADMIN_API_TOKEN={token}\n")
+        with open(env_path, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+    os.environ["ADMIN_API_TOKEN"] = token
 
 settings = Settings()
