@@ -44,6 +44,7 @@ class DomainRoute(DomainEntity):
     method: str
     path: str
     handler: str
+    byte_offset: int | None = None
 
 @dataclass(kw_only=True)
 class DomainCall(DomainEntity):
@@ -52,3 +53,16 @@ class DomainCall(DomainEntity):
     receiver: str | None = None
     caller_function_name: str | None = None
     byte_offset: int | None = None
+
+@dataclass(kw_only=True)
+class DomainInheritance(DomainEntity):
+    file_id: uuid.UUID
+    class_name: str
+    parent_name: str
+    inheritance_type: str
+
+@dataclass(kw_only=True)
+class DomainReturn(DomainEntity):
+    file_id: uuid.UUID
+    function_name: str
+    return_type: str

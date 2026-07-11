@@ -11,6 +11,8 @@ from app.rim.domain.models import (
     DomainImport,
     DomainRoute,
     DomainSymbol,
+    DomainInheritance,
+    DomainReturn,
 )
 
 
@@ -50,11 +52,23 @@ class SKGBuilder:
     def build_route_edges(self, routes: list[DomainRoute], symbols: list[DomainSymbol]):
         # Route -> Function
         for r in routes:
-            self._add_edge(r.file_id, r.id, SKGEdgeType.CONTAINS, evidence='RIM File Contains Route')
+            self._add_edge(
+                r.file_id,
+                r.id,
+                SKGEdgeType.CONTAINS,
+                meta={"byte_offset": r.byte_offset},
+                evidence='RIM File Contains Route',
+            )
             if r.handler:
                 for s in symbols:
                     if s.name == r.handler and s.file_id == r.file_id:
-                        self._add_edge(r.id, s.id, SKGEdgeType.ROUTES_TO, evidence='RIM Route Handler Match')
+                        self._add_edge(
+                            r.id,
+                            s.id,
+                            SKGEdgeType.ROUTES_TO,
+                            meta={"byte_offset": r.byte_offset},
+                            evidence='RIM Route Handler Match',
+                        )
                         break
 
     def build_import_edges(self, imports: list[DomainImport], files: list[DomainFile]):
@@ -135,7 +149,7 @@ class SKGBuilder:
                         source_id,
                         target_symbol.id,
                         SKGEdgeType.CALLS,
-                        meta={"confidence": 0.9},
+                        meta={"confidence": 0.9, "byte_offset": c.byte_offset},
                         evidence='Call Resolution: Same File Match',
                     )
                 continue
@@ -149,7 +163,7 @@ class SKGBuilder:
                         source_id,
                         target_symbol.id,
                         SKGEdgeType.CALLS,
-                        meta={"confidence": 0.8},
+                        meta={"confidence": 0.8, "byte_offset": c.byte_offset},
                         evidence='Call Resolution: Imported File Match',
                     )
                 continue
@@ -160,15 +174,156 @@ class SKGBuilder:
                     source_id,
                     target_symbol.id,
                     SKGEdgeType.CALLS,
-                    meta={"confidence": 0.5},
+                    meta={"confidence": 0.5, "byte_offset": c.byte_offset},
                     evidence='Call Resolution: Repo-wide Fallback Match',
                 )
 
     def build_advanced_edges(self, symbols: list[DomainSymbol]):
-        # Placeholder for EXTENDS, IMPLEMENTS, RETURNS, DEPENDS_ON, REFERENCES
-        # A robust implementation requires extracting parent classes, interfaces, return types
-        # and variable references from the AST.
         pass
+
+    def build_dependency_edges(self, files: list[DomainFile], directories: list[DomainDirectory]):
+        # Roll up file imports to directory-level DEPENDS_ON edges
+        file_to_dir = {f.id: f.directory_id for f in files}
+        added_dependencies = set()
+        
+        for edge in self.edges:
+            if edge.edge_type == SKGEdgeType.IMPORTS.value:
+                src_dir = file_to_dir.get(edge.source_id)
+                tgt_dir = file_to_dir.get(edge.target_id)
+                
+                if src_dir and tgt_dir and src_dir != tgt_dir:
+                    dep_key = (src_dir, tgt_dir)
+                    if dep_key not in added_dependencies:
+                        self._add_edge(src_dir, tgt_dir, SKGEdgeType.DEPENDS_ON, evidence='Rolled up file imports')
+                        added_dependencies.add(dep_key)
+
+    def build_inheritance_edges(self, inheritance: list[DomainInheritance], symbols: list[DomainSymbol]):
+        symbol_by_file_and_name = {}
+        symbol_by_name = {}
+        for s in symbols:
+            symbol_by_file_and_name[(s.file_id, s.name)] = s
+            if s.name not in symbol_by_name:
+                symbol_by_name[s.name] = []
+            symbol_by_name[s.name].append(s)
+
+        # Get imported files for each file from self.edges (which has IMPORTS edges)
+        imported_files = {}
+        for edge in self.edges:
+            if edge.edge_type == SKGEdgeType.IMPORTS.value:
+                if edge.source_id not in imported_files:
+                    imported_files[edge.source_id] = set()
+                imported_files[edge.source_id].add(edge.target_id)
+
+        for inh in inheritance:
+            if inh.parent_name not in symbol_by_name:
+                continue
+
+            # Find the symbol representing the subclass
+            subclass_symbol = symbol_by_file_and_name.get((inh.file_id, inh.class_name))
+            if not subclass_symbol:
+                continue
+
+            edge_type = SKGEdgeType.EXTENDS if inh.inheritance_type == "extends" else SKGEdgeType.IMPLEMENTS
+
+            # 1. Try to resolve to the same file
+            same_file_symbols = [s for s in symbol_by_name[inh.parent_name] if s.file_id == inh.file_id]
+            if same_file_symbols:
+                for target_symbol in same_file_symbols:
+                    self._add_edge(
+                        subclass_symbol.id,
+                        target_symbol.id,
+                        edge_type,
+                        meta={"confidence": 0.9},
+                        evidence='Inheritance Resolution: Same File Match',
+                    )
+                continue
+
+            # 2. Try to resolve to imported files
+            imports = imported_files.get(inh.file_id, set())
+            imported_symbols = [s for s in symbol_by_name[inh.parent_name] if s.file_id in imports]
+            if imported_symbols:
+                for target_symbol in imported_symbols:
+                    self._add_edge(
+                        subclass_symbol.id,
+                        target_symbol.id,
+                        edge_type,
+                        meta={"confidence": 0.8},
+                        evidence='Inheritance Resolution: Imported File Match',
+                    )
+                continue
+
+            # 3. Fallback to repo-wide matching
+            for target_symbol in symbol_by_name[inh.parent_name]:
+                self._add_edge(
+                    subclass_symbol.id,
+                    target_symbol.id,
+                    edge_type,
+                    meta={"confidence": 0.5},
+                    evidence='Inheritance Resolution: Repo-wide Fallback Match',
+                )
+
+    def build_return_type_edges(self, returns: list[DomainReturn], symbols: list[DomainSymbol]):
+        symbol_by_file_and_name = {}
+        symbol_by_name = {}
+        for s in symbols:
+            symbol_by_file_and_name[(s.file_id, s.name)] = s
+            if s.name not in symbol_by_name:
+                symbol_by_name[s.name] = []
+            symbol_by_name[s.name].append(s)
+
+        # Get imported files for each file from self.edges (which has IMPORTS edges)
+        imported_files = {}
+        for edge in self.edges:
+            if edge.edge_type == SKGEdgeType.IMPORTS.value:
+                if edge.source_id not in imported_files:
+                    imported_files[edge.source_id] = set()
+                imported_files[edge.source_id].add(edge.target_id)
+
+        for ret in returns:
+            if ret.return_type not in symbol_by_name:
+                continue
+
+            # Find the symbol representing the function
+            func_symbol = symbol_by_file_and_name.get((ret.file_id, ret.function_name))
+            if not func_symbol:
+                continue
+
+            # 1. Try to resolve to the same file
+            same_file_symbols = [s for s in symbol_by_name[ret.return_type] if s.file_id == ret.file_id]
+            if same_file_symbols:
+                for target_symbol in same_file_symbols:
+                    self._add_edge(
+                        func_symbol.id,
+                        target_symbol.id,
+                        SKGEdgeType.RETURNS,
+                        meta={"confidence": 0.9},
+                        evidence='Return Type Resolution: Same File Match',
+                    )
+                continue
+
+            # 2. Try to resolve to imported files
+            imports = imported_files.get(ret.file_id, set())
+            imported_symbols = [s for s in symbol_by_name[ret.return_type] if s.file_id in imports]
+            if imported_symbols:
+                for target_symbol in imported_symbols:
+                    self._add_edge(
+                        func_symbol.id,
+                        target_symbol.id,
+                        SKGEdgeType.RETURNS,
+                        meta={"confidence": 0.8},
+                        evidence='Return Type Resolution: Imported File Match',
+                    )
+                continue
+
+            # 3. Fallback to repo-wide matching
+            for target_symbol in symbol_by_name[ret.return_type]:
+                self._add_edge(
+                    func_symbol.id,
+                    target_symbol.id,
+                    SKGEdgeType.RETURNS,
+                    meta={"confidence": 0.5},
+                    evidence='Return Type Resolution: Repo-wide Fallback Match',
+                )
 
     async def commit_to_database(self):
         for e in self.edges:

@@ -11,6 +11,7 @@ export function ChatPanel() {
   const { isChatOpen, toggleChat } = useStore();
   const { id: paramId } = useParams();
   const [repoId, setRepoId] = useState(paramId);
+  const [sessionId, setSessionId] = useState(null);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Hello! I am your CodeAtlas AI Assistant. Ask me anything about this repository. For example:\n- "Can you explain the execution flow of the main router?"\n- "Are there any security risks?"' }
   ]);
@@ -38,6 +39,33 @@ export function ChatPanel() {
     }
   }, [paramId, isChatOpen]);
 
+  useEffect(() => {
+    if (!repoId) return;
+    const storedSessionId = localStorage.getItem(`codeatlas_session_${repoId}`);
+    if (storedSessionId) {
+      setSessionId(storedSessionId);
+      api.getSessionDetail(storedSessionId).then(session => {
+        if (session && session.history) {
+          const historyMessages = session.history.flatMap(turn => [
+            { role: 'user', content: turn.query },
+            { role: 'assistant', content: turn.response }
+          ]);
+          setMessages([
+            { role: 'assistant', content: 'Hello! I am your CodeAtlas AI Assistant. Ask me anything about this repository. For example:\n- "Can you explain the execution flow of the main router?"\n- "Are there any security risks?"' },
+            ...historyMessages
+          ]);
+        }
+      }).catch(err => {
+        console.error("Failed to load conversation history:", err);
+      });
+    } else {
+      setSessionId(null);
+      setMessages([
+        { role: 'assistant', content: 'Hello! I am your CodeAtlas AI Assistant. Ask me anything about this repository. For example:\n- "Can you explain the execution flow of the main router?"\n- "Are there any security risks?"' }
+      ]);
+    }
+  }, [repoId]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!input.trim() || !repoId) return;
@@ -50,7 +78,7 @@ export function ChatPanel() {
     try {
       // The API returns the ContextPackage which has an "analysis" or "summary"
       // Our backend endpoint is /api/v1/intelligence/ask
-      const response = await api.askAI(userMessage, repoId);
+      const response = await api.askAI(userMessage, repoId, sessionId);
       
       const content = response.analysis?.text || response.summary || "I processed your request, but couldn't generate a text response.";
       
@@ -59,6 +87,11 @@ export function ChatPanel() {
         content: content,
         context: response // Keep context if we want to build UI for it later
       }]);
+
+      if (response.session_id) {
+        setSessionId(response.session_id);
+        localStorage.setItem(`codeatlas_session_${repoId}`, response.session_id);
+      }
     } catch (err) {
       console.error(err);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error while processing your request. Please try again.' }]);

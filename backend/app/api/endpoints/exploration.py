@@ -326,11 +326,16 @@ async def get_execution_flow(
     call_edges = (await db.execute(
         select(SKGEdgeModel)
         .filter(SKGEdgeModel.repository_version_id == version.id, SKGEdgeModel.edge_type.in_(["ROUTES_TO", "CALLS"]))
-        .order_by(SKGEdgeModel.created_at)
     )).scalars().all()
     adjacency: dict[uuid.UUID, list[SKGEdgeModel]] = {}
     for edge in call_edges:
         adjacency.setdefault(edge.source_id, []).append(edge)
+
+    def edge_offset(edge: SKGEdgeModel) -> int:
+        meta_offset = (edge.metadata_ or {}).get("byte_offset")
+        if isinstance(meta_offset, int):
+            return meta_offset
+        return 2**31 - 1
 
     steps = []
     flow_edges = []
@@ -342,7 +347,7 @@ async def get_execution_flow(
             continue
         visited.add(current)
         steps.extend(await describe_entities(version.id, {current}, db))
-        for edge in adjacency.get(current, []):
+        for edge in sorted(adjacency.get(current, []), key=edge_offset):
             flow_edges.append(edge)
             if edge.target_id not in visited:
                 queue.append(edge.target_id)

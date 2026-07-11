@@ -23,6 +23,8 @@ class JavaScriptPlugin(ParserPlugin):
         imports_extracted = []
         routes_extracted = []
         calls_extracted = []
+        inheritance_extracted = []
+        returns_extracted = []
         
         for filepath in filepaths:
             try:
@@ -37,6 +39,8 @@ class JavaScriptPlugin(ParserPlugin):
                 imports_extracted.extend(features["imports"])
                 routes_extracted.extend(features["routes"])
                 calls_extracted.extend(features["calls"])
+                inheritance_extracted.extend(features["inheritance"])
+                returns_extracted.extend(features["returns"])
                 
                 meta = MetadataExtractor.extract_from_file(content)
                 metadata["total_loc"] += meta["loc"]
@@ -52,6 +56,8 @@ class JavaScriptPlugin(ParserPlugin):
             imports=imports_extracted,
             routes=routes_extracted,
             calls=calls_extracted,
+            inheritance=inheritance_extracted,
+            returns=returns_extracted,
             language="javascript",
             parser_version="tree-sitter-javascript",
             parse_duration=time.time() - start_time,

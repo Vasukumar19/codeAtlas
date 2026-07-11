@@ -22,4 +22,5 @@ class StructuredAIResponse(BaseModel):
     steps: list[str] = Field(default_factory=list)
     citations: list[AICitation] = Field(default_factory=list)
     confidence: float
+    session_id: uuid.UUID | None = None
     metadata: dict[str, Any] = Field(default_factory=dict)

@@ -1,4 +1,5 @@
 import time
+import uuid
 
 from app.intelligence.domain.schemas import StructuredAIResponse
 from app.intelligence.observability import Observability
@@ -12,14 +13,14 @@ from app.retrieval.domain.schemas import ContextPackage, RetrievalIntent
 
 
 class AIGateway:
-    def __init__(self):
+    def __init__(self, session: ConversationManager):
         self.compressor = ContextCompressor()
         self.builder = PromptBuilder()
         self.validator = ResponseValidator()
         self.formatter = ResponseFormatter()
-        self.session = ConversationManager()
+        self.session = session
         
-    async def process(self, query: str, context: ContextPackage, intent: RetrievalIntent, model_name: str = "OpenAI") -> StructuredAIResponse:
+    async def process(self, query: str, context: ContextPackage, intent: RetrievalIntent, repository_id: uuid.UUID, model_name: str = "OpenAI") -> StructuredAIResponse:
         start_time = time.time()
         
         # 1. Strategy
@@ -30,7 +31,8 @@ class AIGateway:
         compressed_ctx = self.compressor.compress(context)
         
         # 3. Build Prompt
-        prompt = self.builder.build(query, compressed_ctx)
+        history = await self.session.get_history(repository_id)
+        prompt = self.builder.build(query, compressed_ctx, history=history)
         
         # 4. Invoke model
         if strategy.requires_team:
@@ -68,6 +70,6 @@ class AIGateway:
         )
         
         # 6. Session
-        self.session.add_turn(query, raw_response)
+        await self.session.add_turn(repository_id, query, raw_response)
         
         return structured_response

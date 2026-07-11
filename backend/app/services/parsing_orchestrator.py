@@ -19,6 +19,8 @@ from app.models.rim.models import (
     RIMImportModel,
     RIMRouteModel,
     RIMSymbolModel,
+    RIMInheritanceModel,
+    RIMReturnModel,
 )
 from app.parser import initialize_registry
 from app.parser.detector import LanguageDetector
@@ -31,6 +33,8 @@ from app.rim.domain.models import (
     DomainImport,
     DomainRoute,
     DomainSymbol,
+    DomainInheritance,
+    DomainReturn,
 )
 from app.skg.builder import SKGBuilder
 
@@ -126,6 +130,8 @@ class ParsingOrchestrator:
         imports = (await self.db.execute(select(RIMImportModel).filter_by(repository_version_id=version.id))).scalars().all()
         routes = (await self.db.execute(select(RIMRouteModel).filter_by(repository_version_id=version.id))).scalars().all()
         calls = (await self.db.execute(select(RIMCallModel).filter_by(repository_version_id=version.id))).scalars().all()
+        inheritance = (await self.db.execute(select(RIMInheritanceModel).filter_by(repository_version_id=version.id))).scalars().all()
+        returns = (await self.db.execute(select(RIMReturnModel).filter_by(repository_version_id=version.id))).scalars().all()
 
         domain_dirs = [DomainDirectory(id=d.id, repository_id=d.repository_id, repository_version_id=d.repository_version_id, path=d.path, parent_id=d.parent_id) for d in dirs]
         domain_files = [DomainFile(id=f.id, repository_id=f.repository_id, repository_version_id=f.repository_version_id, path=f.path, directory_id=f.directory_id, language=f.language) for f in files]
@@ -133,6 +139,8 @@ class ParsingOrchestrator:
         domain_imports = [DomainImport(id=i.id, repository_id=i.repository_id, repository_version_id=i.repository_version_id, file_id=i.file_id, raw_statement=i.raw_statement) for i in imports]
         domain_routes = [DomainRoute(id=r.id, repository_id=r.repository_id, repository_version_id=r.repository_version_id, file_id=r.file_id, method=r.method, path=r.path, handler=r.handler) for r in routes]
         domain_calls = [DomainCall(id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, file_id=c.file_id, function_name=c.function_name, receiver=c.receiver, caller_function_name=c.caller_function_name, byte_offset=c.byte_offset) for c in calls]
+        domain_inheritance = [DomainInheritance(id=h.id, repository_id=h.repository_id, repository_version_id=h.repository_version_id, file_id=h.file_id, class_name=h.class_name, parent_name=h.parent_name, inheritance_type=h.inheritance_type) for h in inheritance]
+        domain_returns = [DomainReturn(id=n.id, repository_id=n.repository_id, repository_version_id=n.repository_version_id, file_id=n.file_id, function_name=n.function_name, return_type=n.return_type) for n in returns]
 
         # 2. Build SKG
         builder = SKGBuilder(self.db, version.id)
@@ -140,7 +148,9 @@ class ParsingOrchestrator:
         builder.build_route_edges(domain_routes, domain_symbols)
         builder.build_import_edges(domain_imports, domain_files)
         builder.build_call_edges(domain_calls, domain_symbols)
-        builder.build_advanced_edges(domain_symbols)
+        builder.build_dependency_edges(domain_files, domain_dirs)
+        builder.build_inheritance_edges(domain_inheritance, domain_symbols)
+        builder.build_return_type_edges(domain_returns, domain_symbols)
         await builder.commit_to_database()
 
         # 3. Knowledge Pipeline
@@ -280,4 +290,25 @@ class ParsingOrchestrator:
                     receiver=call.get("receiver"),
                     caller_function_name=call.get("caller_function_name"),
                     byte_offset=call.get("byte_offset"),
+                ))
+
+        for inh in parse_result.inheritance:
+            if inh["file"] in file_map:
+                self.db.add(RIMInheritanceModel(
+                    repository_id=version.repository_id,
+                    repository_version_id=version.id,
+                    file_id=file_map[inh["file"]],
+                    class_name=inh["class"],
+                    parent_name=inh["parent"],
+                    inheritance_type=inh["type"],
+                ))
+
+        for ret in parse_result.returns:
+            if ret["file"] in file_map:
+                self.db.add(RIMReturnModel(
+                    repository_id=version.repository_id,
+                    repository_version_id=version.id,
+                    file_id=file_map[ret["file"]],
+                    function_name=ret["function"],
+                    return_type=ret["returns"],
                 ))

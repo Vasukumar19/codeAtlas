@@ -10,6 +10,8 @@ class ParseResult(BaseModel):
     imports: list[dict[str, Any]] = Field(default_factory=list)
     routes: list[dict[str, Any]] = Field(default_factory=list)
     calls: list[dict[str, Any]] = Field(default_factory=list)
+    inheritance: list[dict[str, Any]] = Field(default_factory=list)
+    returns: list[dict[str, Any]] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
     errors: list[dict[str, Any]] = Field(default_factory=list)
     statistics: dict[str, Any] = Field(default_factory=dict)

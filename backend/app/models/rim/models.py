@@ -49,6 +49,7 @@ class RIMRouteModel(Base, UUIDMixin, TimestampMixin):
     method: Mapped[str] = mapped_column(String)
     path: Mapped[str] = mapped_column(String)
     handler: Mapped[str] = mapped_column(String)
+    byte_offset: Mapped[int | None] = mapped_column(nullable=True)
 
 class RIMCallModel(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "rim_calls"
@@ -59,3 +60,20 @@ class RIMCallModel(Base, UUIDMixin, TimestampMixin):
     receiver: Mapped[str | None] = mapped_column(String, nullable=True)
     caller_function_name: Mapped[str | None] = mapped_column(String, nullable=True)
     byte_offset: Mapped[int | None] = mapped_column(nullable=True)
+
+class RIMInheritanceModel(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "rim_inheritance"
+    repository_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    repository_version_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    file_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rim_files.id"))
+    class_name: Mapped[str] = mapped_column(String)
+    parent_name: Mapped[str] = mapped_column(String)
+    inheritance_type: Mapped[str] = mapped_column(String) # "extends" or "implements"
+
+class RIMReturnModel(Base, UUIDMixin, TimestampMixin):
+    __tablename__ = "rim_returns"
+    repository_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    repository_version_id: Mapped[uuid.UUID] = mapped_column(index=True)
+    file_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("rim_files.id"))
+    function_name: Mapped[str] = mapped_column(String)
+    return_type: Mapped[str] = mapped_column(String)

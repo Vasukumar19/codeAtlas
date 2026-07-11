@@ -10,6 +10,8 @@ from app.models.rim.models import (
     RIMRouteModel,
     RIMSymbolModel,
     RIMCallModel,
+    RIMInheritanceModel,
+    RIMReturnModel,
 )
 from app.parser.models import ParseResult
 from app.rim.domain.models import (
@@ -19,6 +21,8 @@ from app.rim.domain.models import (
     DomainRoute,
     DomainSymbol,
     DomainCall,
+    DomainInheritance,
+    DomainReturn,
 )
 from app.rim.identity import IdentityGenerator
 
@@ -35,6 +39,8 @@ class RIMBuilderPipeline:
         self.imports: list[DomainImport] = []
         self.routes: list[DomainRoute] = []
         self.calls: list[DomainCall] = []
+        self.inheritance: list[DomainInheritance] = []
+        self.returns: list[DomainReturn] = []
 
     def _ensure_directory(self, path: str) -> uuid.UUID:
         dir_path = os.path.dirname(path)
@@ -108,6 +114,24 @@ class RIMBuilderPipeline:
                 file_id=file_id, function_name=call["function"], receiver=call.get("receiver"),
                 caller_function_name=call.get("caller_function_name"), byte_offset=call.get("byte_offset")
             ))
+
+        for inh in getattr(pr, "inheritance", []):
+            filepath = inh["file"]
+            file_id = IdentityGenerator.generate_file_id(self.repo_id, filepath)
+            inh_id = uuid.uuid4()
+            self.inheritance.append(DomainInheritance(
+                id=inh_id, repository_id=self.repo_id, repository_version_id=self.version_id,
+                file_id=file_id, class_name=inh["class"], parent_name=inh["parent"], inheritance_type=inh["type"]
+            ))
+
+        for ret in getattr(pr, "returns", []):
+            filepath = ret["file"]
+            file_id = IdentityGenerator.generate_file_id(self.repo_id, filepath)
+            ret_id = uuid.uuid4()
+            self.returns.append(DomainReturn(
+                id=ret_id, repository_id=self.repo_id, repository_version_id=self.version_id,
+                file_id=file_id, function_name=ret["function"], return_type=ret["returns"]
+            ))
             
         # 4. Relationship Resolution
         # Explicit hierarchical resolution would link Function->Parent Class etc. 
@@ -135,6 +159,18 @@ class RIMBuilderPipeline:
                 id=c.id, repository_id=c.repository_id, repository_version_id=c.repository_version_id, 
                 file_id=c.file_id, function_name=c.function_name, receiver=c.receiver,
                 caller_function_name=c.caller_function_name, byte_offset=c.byte_offset
+            ))
+            
+        for h in self.inheritance:
+            self.db.add(RIMInheritanceModel(
+                id=h.id, repository_id=h.repository_id, repository_version_id=h.repository_version_id,
+                file_id=h.file_id, class_name=h.class_name, parent_name=h.parent_name, inheritance_type=h.inheritance_type
+            ))
+
+        for n in self.returns:
+            self.db.add(RIMReturnModel(
+                id=n.id, repository_id=n.repository_id, repository_version_id=n.repository_version_id,
+                file_id=n.file_id, function_name=n.function_name, return_type=n.return_type
             ))
             
         await self.db.commit()

@@ -1,5 +1,5 @@
 from app.db.base_class import Base, TimestampMixin, UUIDMixin
-from app.models import Job, ParsingReport, Repository, RepositoryVersion
+from app.models import Job, ParsingReport, Repository, RepositoryVersion, ConversationSession
 from app.models.embeddings.collection import EmbeddingCollectionModel
 from app.models.embeddings.metadata import EmbeddingMetadataModel
 from app.models.enrichment.node import KnowledgeNodeModel
@@ -11,7 +11,9 @@ from app.models.rim.models import (
     RIMImportModel,
     RIMRouteModel,
     RIMSymbolModel,
+    RIMInheritanceModel,
+    RIMReturnModel,
 )
 from app.models.skg.edge import SKGEdgeModel
 
-__all__ = ["Base", "TimestampMixin", "UUIDMixin", "Repository", "RepositoryVersion", "Job", "ParsingReport", "RIMDirectoryModel", "RIMCallModel", "RIMFileModel", "RIMSymbolModel", "RIMImportModel", "RIMRouteModel", "SKGEdgeModel", "KnowledgeNodeModel", "EmbeddingCollectionModel", "EmbeddingMetadataModel", "RetrievalTraceModel"]
+__all__ = ["Base", "TimestampMixin", "UUIDMixin", "Repository", "RepositoryVersion", "Job", "ParsingReport", "RIMDirectoryModel", "RIMCallModel", "RIMFileModel", "RIMSymbolModel", "RIMImportModel", "RIMRouteModel", "RIMInheritanceModel", "RIMReturnModel", "SKGEdgeModel", "KnowledgeNodeModel", "EmbeddingCollectionModel", "EmbeddingMetadataModel", "RetrievalTraceModel", "ConversationSession"]

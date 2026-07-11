@@ -1,8 +1,20 @@
-import pytest
 import uuid
+
+import pytest
+
 from app.embeddings.orchestrator import EmbeddingOrchestrator
-from app.enrichment.domain.schemas import KnowledgeNode, KnowledgeIdentity, KnowledgeSemantics, KnowledgeMetadata, KnowledgeRelationships
-from typing import List
+from app.enrichment.domain.schemas import (
+    KnowledgeIdentity,
+    KnowledgeMetadata,
+    KnowledgeNode,
+    KnowledgeRelationships,
+    KnowledgeSemantics,
+)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_test_db():
+    yield
 
 class MockAsyncSession:
     def __init__(self):

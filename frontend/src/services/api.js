@@ -35,13 +35,25 @@ export const api = {
     return res.json();
   },
   
-  askAI: async (query, repoId) => {
+  askAI: async (query, repoId, sessionId = null) => {
     const res = await fetch(`${BASE_URL}/intelligence/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: query, repository_id: repoId })
+      body: JSON.stringify({ query: query, repository_id: repoId, session_id: sessionId })
     });
     if (!res.ok) throw new Error('Failed to fetch AI response');
+    return res.json();
+  },
+
+  getSessionDetail: async (sessionId) => {
+    const res = await fetch(`${BASE_URL}/intelligence/sessions/${sessionId}`);
+    if (!res.ok) throw new Error('Failed to fetch session detail');
+    return res.json();
+  },
+
+  listSessions: async (repoId) => {
+    const res = await fetch(`${BASE_URL}/intelligence/sessions?repository_id=${repoId}`);
+    if (!res.ok) throw new Error('Failed to list sessions');
     return res.json();
   },
 

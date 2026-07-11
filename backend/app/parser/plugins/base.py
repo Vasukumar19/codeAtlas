@@ -22,12 +22,14 @@ class ParserPlugin(ABC):
 
     @classmethod
     def extract_features(cls, tree: Tree, content_bytes: bytes, filepath: str, language_name: str) -> dict[str, list[dict]]:
-        features = {"symbols": [], "imports": [], "routes": [], "calls": []}
+        features = {"symbols": [], "imports": [], "routes": [], "calls": [], "inheritance": [], "returns": []}
         
         q_symbols = cls.load_query(language_name, "symbols")
         q_imports = cls.load_query(language_name, "imports")
         q_routes = cls.load_query(language_name, "routes")
         q_calls = cls.load_query(language_name, "calls")
+        q_inheritance = cls.load_query(language_name, "inheritance")
+        q_returns = cls.load_query(language_name, "returns")
         
         if q_symbols:
             cursor = QueryCursor(q_symbols)
@@ -90,7 +92,61 @@ class ParserPlugin(ABC):
                                 break
                         curr = curr.parent
                     features["calls"].append(call_data)
-                    
+
+        if q_inheritance:
+            cursor = QueryCursor(q_inheritance)
+            for _, match in cursor.matches(tree.root_node):
+                for cap_name, nodes in match.items():
+                    for node in nodes:
+                        parent_name = content_bytes[node.start_byte:node.end_byte].decode("utf8")
+                        inheritance_type = "extends" if "extends" in cap_name else "implements"
+                        # Walk up the AST to find enclosing class definition
+                        curr = node.parent
+                        class_name = None
+                        while curr:
+                            if curr.type in ["class_definition", "class_declaration"]:
+                                for child in curr.children:
+                                    if child.type == "identifier":
+                                        class_name = content_bytes[child.start_byte:child.end_byte].decode("utf8")
+                                        break
+                                if class_name:
+                                    break
+                            curr = curr.parent
+                        if class_name:
+                            features["inheritance"].append({
+                                "file": filepath,
+                                "class": class_name,
+                                "parent": parent_name,
+                                "type": inheritance_type
+                            })
+
+        if q_returns:
+            cursor = QueryCursor(q_returns)
+            for _, match in cursor.matches(tree.root_node):
+                for cap_name, nodes in match.items():
+                    for node in nodes:
+                        return_type_text = content_bytes[node.start_byte:node.end_byte].decode("utf8")
+                        if return_type_text.startswith(":"):
+                            return_type_text = return_type_text[1:].strip()
+                        # Walk up to find enclosing function definition
+                        curr = node.parent
+                        function_name = None
+                        while curr:
+                            if curr.type in ["function_definition", "method_declaration", "method_definition", "function_declaration", "function"]:
+                                for child in curr.children:
+                                    if child.type == "identifier":
+                                        function_name = content_bytes[child.start_byte:child.end_byte].decode("utf8")
+                                        break
+                                if function_name:
+                                    break
+                            curr = curr.parent
+                        if function_name:
+                            features["returns"].append({
+                                "file": filepath,
+                                "function": function_name,
+                                "returns": return_type_text
+                            })
+                            
         return features
 
     @classmethod
